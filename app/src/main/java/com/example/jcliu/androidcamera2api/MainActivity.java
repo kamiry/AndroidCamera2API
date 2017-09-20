@@ -9,8 +9,10 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.os.HandlerThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,8 +24,10 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
-
+import android.widget.Toast;
+import android.os.Handler;
 import java.util.Arrays;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,8 +39,10 @@ public class MainActivity extends AppCompatActivity {
     private String cameraId;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     protected CaptureRequest.Builder captureRequestBuilder;
+    protected CameraCaptureSession cameraCaptureSessions;
+    private Handler mBackgroundHandler;
+    private HandlerThread mBackgroundThread;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -132,16 +138,67 @@ public class MainActivity extends AppCompatActivity {
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
                     if (null == myCameraDevice)
                         return;
-                    cameraCaptureSession = came
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
                 }
 
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-
+                    Toast.makeText(MainActivity.this, "Configuration change", Toast.LENGTH_SHORT).show();
                 }
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    protected void updatePreview(){
+        if(null == myCameraDevice) {
+            Log.e(TAG, "updatePreview error, device null");
+        }
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        try {
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void startBackgroundThread(){
+        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+
+    }
+
+    protected void stopBackgroundThread(){
+        mBackgroundThread.quitSafely();
+        try{
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e(TAG, "onResume");
+        startBackgroundThread();
+        if(textureView.isAvailable()){
+            openCamera();
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.e(TAG, "onPause");
+        stopBackgroundThread();
+
     }
 }
