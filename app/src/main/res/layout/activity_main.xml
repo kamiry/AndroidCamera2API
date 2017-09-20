@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        tools:layout_above="@+id/btn_takepicture" />
+        android:layout_above="@+id/btn_takepicture" />
 
     <Button
         android:id="@+id/btn_takepicture"
