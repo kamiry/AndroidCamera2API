@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "AndroidCamera2API";
     private TextureView textureView;
-    private Button takePictureBtn, updateBtn;
+    private Button takePictureBtn, updateBtn, AFoffBtn;
     protected CameraDevice myCameraDevice;
     private Size imageDimension;
     private String cameraId;
@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     EditText expTimeText;
     Long expTime;
     int ISOvalue;
+    private boolean AFmode = true;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,6 +93,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 takePicture();
+            }
+        });
+        AFoffBtn = (Button) findViewById(R.id.btn_AFOff);
+        AFoffBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AFmode = !AFmode;
+                if(AFmode)
+                    AFoffBtn.setText("AF on");
+                else
+                    AFoffBtn.setText("AF off");
             }
         });
         updateBtn = (Button) findViewById(R.id.btn_update);
@@ -219,7 +231,12 @@ public class MainActivity extends AppCompatActivity {
         }
         //captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         //captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+        if(AFmode)
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+        else {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
+        }
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         //captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
         Log.d(TAG, "ISO: "+ ISOvalue);
@@ -307,8 +324,10 @@ public class MainActivity extends AppCompatActivity {
             // orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation)); // orientation not consistent?
-            //
-            final File file = new File(Environment.getExternalStorageDirectory()+"/pic.jpg");
+            // file name
+            String fname_prefix = "/ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
+            String fname = fname_prefix+".jpg";
+            final File file = new File(Environment.getExternalStorageDirectory()+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
                 @Override
