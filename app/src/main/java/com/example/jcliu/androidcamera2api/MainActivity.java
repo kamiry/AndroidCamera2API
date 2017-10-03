@@ -32,6 +32,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.os.Handler;
 
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "AndroidCamera2API";
     private TextureView textureView;
-    private Button takePictureBtn;
+    private Button takePictureBtn, updateBtn;
     protected CameraDevice myCameraDevice;
     private Size imageDimension;
     private String cameraId;
@@ -67,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+    // view-related
+    EditText ISOText;
+    EditText expTimeText;
+    Long expTime;
+    int ISOvalue;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +81,10 @@ public class MainActivity extends AppCompatActivity {
         textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
+        ISOText = (EditText) findViewById(R.id.editText);
+        ISOvalue = Integer.parseInt(ISOText.getHint().toString());
+        expTimeText = (EditText) findViewById(R.id.editText2);
+        expTime = Long.parseLong(expTimeText.getHint().toString())*1000000;
         //
         takePictureBtn = (Button) findViewById(R.id.btn_takepicture);
         assert takePictureBtn != null;
@@ -82,6 +92,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 takePicture();
+            }
+        });
+        updateBtn = (Button) findViewById(R.id.btn_update);
+        updateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (ISOText.length() !=0) {
+                    Log.d(TAG, "ISO: " + ISOText.getText().toString());
+                    ISOvalue = Integer.parseInt(ISOText.getText().toString());
+                }
+                if( expTimeText.length() != 0){
+                    Log.d(TAG, "Exposure time: " + expTimeText.getText().toString());
+                    expTime = Long.parseLong(expTimeText.getText().toString())*1000000;
+                }
+                else
+                    Log.d(TAG, "Exposure time null");
+                Log.d(TAG, "stop repeating request (for preview)");
+                try {
+                    cameraCaptureSessions.stopRepeating();
+                    updatePreview();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -111,8 +144,9 @@ public class MainActivity extends AppCompatActivity {
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
-            Log.e(TAG, "onOpened");
+            Log.d(TAG, "onOpened");
             myCameraDevice = cameraDevice;
+            Log.d(TAG, "call createCameraPreview");
             createCameraPreview();
         }
 
@@ -130,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera(){
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        Log.e(TAG, "is camera open?");
+        Log.d(TAG, "is camera open?");
         try{
             cameraId = manager.getCameraIdList() [0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -139,25 +173,26 @@ public class MainActivity extends AppCompatActivity {
             imageDimension = map.getOutputSizes(SurfaceTexture.class) [0];
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ){
                 ActivityCompat.requestPermissions(MainActivity.this, new String [] {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
-                Log.e(TAG, "request permission");
+                Log.d(TAG, "request permission");
                 return;
             }
             manager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        Log.e(TAG, "openCamera ok");
+        Log.d(TAG, "openCamera ok");
     }
 
 
     protected void createCameraPreview(){
         try{
+            Log.d(TAG, "createCameraPreview");
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
-            //captureRequestBuilder = myCameraDevice.createCaptureRequest(myCameraDevice.TEMPLATE_PREVIEW);
-            captureRequestBuilder = myCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_MANUAL);
+            captureRequestBuilder = myCameraDevice.createCaptureRequest(myCameraDevice.TEMPLATE_PREVIEW);
+            //captureRequestBuilder = myCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_MANUAL);
             captureRequestBuilder.addTarget(surface);
             myCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
@@ -180,15 +215,18 @@ public class MainActivity extends AppCompatActivity {
 
     protected void updatePreview(){
         if(null == myCameraDevice) {
-            Log.e(TAG, "updatePreview error, device null");
+            Log.d(TAG, "updatePreview error, device null");
         }
         //captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
+        //captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-        captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, Long.valueOf("10000000"));
-        captureRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 500);
+        //captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
+        Log.d(TAG, "ISO: "+ ISOvalue);
+        Log.d(TAG, "Exposure time: " + expTime);
+        // Long.parseLong(expTimeText.getHint().toString())*1000000
+        captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, expTime); //Long.valueOf("10000000")
+        captureRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, ISOvalue);
         try {
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
@@ -259,13 +297,13 @@ public class MainActivity extends AppCompatActivity {
             final CaptureRequest.Builder captureBuilder = myCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
             //captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
+            //captureBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
             //captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, 0);
-            captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-            captureBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, Long.valueOf("10000000"));
-            captureBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 500);
+            //captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
+            captureBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, expTime);
+            captureBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, ISOvalue);
             // orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation)); // orientation not consistent?
