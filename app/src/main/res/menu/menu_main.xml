@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/white_light"
+        android:title="white light"
+        app:showAsAction="never"
+            />
+    <item android:id="@+id/calibriate"
+        android:title="calibriate"
+        app:showAsAction="never"
+        />
+    <item android:id="@+id/air"
+        android:title="sample in air"
+        app:showAsAction="never"
+        />
+    <item android:id="@+id/water"
+        android:title="sample in water"
+        app:showAsAction="never"
+        />
+</menu>

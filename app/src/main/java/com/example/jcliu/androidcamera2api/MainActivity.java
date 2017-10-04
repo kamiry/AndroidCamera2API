@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar focusSeekBar;
     String fname_prefix="White";
 
+    // option menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
