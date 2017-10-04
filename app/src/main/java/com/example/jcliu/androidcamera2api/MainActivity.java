@@ -26,6 +26,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -33,6 +34,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.os.Handler;
 
@@ -71,9 +73,10 @@ public class MainActivity extends AppCompatActivity {
     // view-related
     EditText ISOText;
     EditText expTimeText;
-    Long expTime;
-    int ISOvalue;
+    Long expTime, expTimeMax, expTimeMin;
+    int ISOvalue, ISOmin, ISOmax;
     private boolean AFmode = true;
+    private TextView ISOTextView, ExpTextView;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
         ISOvalue = Integer.parseInt(ISOText.getHint().toString());
         expTimeText = (EditText) findViewById(R.id.editText2);
         expTime = Long.parseLong(expTimeText.getHint().toString())*1000000;
+        ISOTextView = (TextView) findViewById(R.id.textView);
+        ExpTextView = (TextView) findViewById(R.id.textView2);
         //
         takePictureBtn = (Button) findViewById(R.id.btn_takepicture);
         assert takePictureBtn != null;
@@ -116,7 +121,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if( expTimeText.length() != 0){
                     Log.d(TAG, "Exposure time: " + expTimeText.getText().toString());
-                    expTime = Long.parseLong(expTimeText.getText().toString())*1000000;
+                    Double expTimeD = Double.parseDouble(expTimeText.getText().toString())*1000000; //ms to ns
+                    expTime = expTimeD.longValue();
                 }
                 else
                     Log.d(TAG, "Exposure time null");
@@ -180,6 +186,20 @@ public class MainActivity extends AppCompatActivity {
         try{
             cameraId = manager.getCameraIdList() [0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            //
+            Range<Integer> ISOrange = characteristics.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
+            ISOmin = ISOrange.getLower();
+            ISOmax = ISOrange.getUpper();
+            Log.d(TAG, "ISO min=" + ISOmin);
+            Log.d(TAG, "ISO max=" + ISOmax);
+            ISOTextView.append("("+ISOmin+" to "+ISOmax+")");
+            Range<Long> expTimeRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            expTimeMax = expTimeRange.getUpper();
+            expTimeMin = expTimeRange.getLower();
+            Log.d(TAG, "Exposure time min=" + expTimeMin);
+            Log.d(TAG, "Exposure time max=" + expTimeMax);
+            ExpTextView.append("("+expTimeMin.doubleValue()/1000000+" to "+expTimeMax.doubleValue()/1000000+")");
+            //
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class) [0];
@@ -241,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
         //captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
         Log.d(TAG, "ISO: "+ ISOvalue);
         Log.d(TAG, "Exposure time: " + expTime);
-        // Long.parseLong(expTimeText.getHint().toString())*1000000
         captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, expTime); //Long.valueOf("10000000")
         captureRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, ISOvalue);
         try {
