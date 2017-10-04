@@ -192,13 +192,13 @@ public class MainActivity extends AppCompatActivity {
             ISOmax = ISOrange.getUpper();
             Log.d(TAG, "ISO min=" + ISOmin);
             Log.d(TAG, "ISO max=" + ISOmax);
-            ISOTextView.append("("+ISOmin+" to "+ISOmax+")");
+            ISOTextView.setText("ISO ("+ISOmin+" to "+ISOmax+"): ");
             Range<Long> expTimeRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
             expTimeMax = expTimeRange.getUpper();
             expTimeMin = expTimeRange.getLower();
             Log.d(TAG, "Exposure time min=" + expTimeMin);
             Log.d(TAG, "Exposure time max=" + expTimeMax);
-            ExpTextView.append("("+expTimeMin.doubleValue()/1000000+" to "+expTimeMax.doubleValue()/1000000+")");
+            ExpTextView.setText("Exposure time ("+expTimeMin.doubleValue()/1000000+" to "+expTimeMax.doubleValue()/1000000+"): ");
             //
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
