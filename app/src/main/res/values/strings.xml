@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AndroidCamera2API</string>
+    <string name="app_name">SpectroMeter Pro</string>
     <string name="take_picture">Take picture</string>
     <string name="update">Update Setting</string>
     <string name="AFOff">AF on</string>

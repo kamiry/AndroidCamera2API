@@ -25,15 +25,20 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.os.Handler;
@@ -71,12 +76,41 @@ public class MainActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
     // view-related
-    EditText ISOText;
-    EditText expTimeText;
+    private EditText ISOText;
+    private EditText expTimeText;
     Long expTime, expTimeMax, expTimeMin;
     int ISOvalue, ISOmin, ISOmax;
     private boolean AFmode = true;
     private TextView ISOTextView, ExpTextView;
+    private float minFocusD, focusDist;
+    private SeekBar focusSeekBar;
+    String fname_prefix="White";
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id){
+            case R.id.white_light:
+                fname_prefix = "White";
+                break;
+            case R.id.calibriate:
+                fname_prefix = "Cal";
+                break;
+            case R.id.air:
+                fname_prefix = "Air";
+                break;
+            case R.id.water:
+                fname_prefix = "Water";
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +125,33 @@ public class MainActivity extends AppCompatActivity {
         expTime = Long.parseLong(expTimeText.getHint().toString())*1000000;
         ISOTextView = (TextView) findViewById(R.id.textView);
         ExpTextView = (TextView) findViewById(R.id.textView2);
+        // seekBar
+        focusSeekBar = (SeekBar) findViewById(R.id.focusSeekBar);
+        focusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                focusDist = minFocusD*((float)(100-i)/100);
+                AFmode = false;
+                AFoffBtn.setText("AF off");
+                //Log.d(TAG, "current focus=" + focusDist);
+                try {
+                    cameraCaptureSessions.stopRepeating();
+                    updatePreview();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         //
         takePictureBtn = (Button) findViewById(R.id.btn_takepicture);
         assert takePictureBtn != null;
@@ -109,6 +170,12 @@ public class MainActivity extends AppCompatActivity {
                     AFoffBtn.setText("AF on");
                 else
                     AFoffBtn.setText("AF off");
+                try {
+                    cameraCaptureSessions.stopRepeating();
+                    updatePreview();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
             }
         });
         updateBtn = (Button) findViewById(R.id.btn_update);
@@ -199,6 +266,12 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Exposure time min=" + expTimeMin);
             Log.d(TAG, "Exposure time max=" + expTimeMax);
             ExpTextView.setText("Exposure time ("+expTimeMin.doubleValue()/1000000+" to "+expTimeMax.doubleValue()/1000000+"): ");
+            /*float[] focusRange = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+            for(int i=0; i<focusRange.length; i++)
+                Log.d(TAG,"focus =" + focusRange[i]);
+                */
+            minFocusD = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+            Log.d(TAG, "min focus distance = " + minFocusD);
             //
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
@@ -255,12 +328,12 @@ public class MainActivity extends AppCompatActivity {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
         else {
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
-            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f);
+            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focusDist);
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         //captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-        Log.d(TAG, "ISO: "+ ISOvalue);
-        Log.d(TAG, "Exposure time: " + expTime);
+        //Log.d(TAG, "ISO: "+ ISOvalue);
+        //Log.d(TAG, "Exposure time: " + expTime);
         captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, expTime); //Long.valueOf("10000000")
         captureRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, ISOvalue);
         try {
@@ -344,9 +417,9 @@ public class MainActivity extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation)); // orientation not consistent?
             // file name
-            String fname_prefix = "/ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
-            String fname = fname_prefix+".jpg";
-            final File file = new File(Environment.getExternalStorageDirectory()+fname);
+            String prefix = fname_prefix + "ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
+            String fname = prefix+".jpg";
+            final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
                 @Override
