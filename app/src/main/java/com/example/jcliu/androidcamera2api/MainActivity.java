@@ -3,6 +3,7 @@ package com.example.jcliu.androidcamera2api;
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
@@ -112,7 +113,10 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }).show();
                 break;
-
+            case R.id.computation:
+                Intent it = new Intent(this, ComputeActivity.class);
+                startActivity(it);
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
