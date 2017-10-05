@@ -3,4 +3,5 @@
     <string name="take_picture">Take picture</string>
     <string name="update">Update Setting</string>
     <string name="AFOff">AF on</string>
+    <string name="photo_object">拍攝標的</string>
 </resources>

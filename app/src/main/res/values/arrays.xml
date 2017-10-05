@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="photo_option">
+        <item>calibrate</item>
+        <item>white light</item>
+        <item>sample in air</item>
+        <item>sample in water</item>
+    </string-array>
+</resources>

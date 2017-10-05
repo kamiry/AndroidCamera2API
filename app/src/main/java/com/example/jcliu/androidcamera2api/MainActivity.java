@@ -2,6 +2,7 @@ package com.example.jcliu.androidcamera2api;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
@@ -23,6 +24,7 @@ import android.os.HandlerThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -85,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private float minFocusD, focusDist;
     private SeekBar focusSeekBar;
     String fname_prefix="White";
+    String[] fname_options = {"Cal", "White", "Air", "Water"};
 
     // option menu
     @Override
@@ -97,18 +100,19 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id){
-            case R.id.white_light:
-                fname_prefix = "White";
+            case R.id.photo_option:
+                Log.d(TAG, "option 1");
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(R.string.photo_object)
+                        .setItems(R.array.photo_option, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                fname_prefix = fname_options[i];
+                                Log.d(TAG, "photo option:"+fname_prefix);
+                            }
+                        }).show();
                 break;
-            case R.id.calibriate:
-                fname_prefix = "Cal";
-                break;
-            case R.id.air:
-                fname_prefix = "Air";
-                break;
-            case R.id.water:
-                fname_prefix = "Water";
-                break;
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -243,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onError(@NonNull CameraDevice cameraDevice, int i) {
-            myCameraDevice.close();
+            if(myCameraDevice != null) myCameraDevice.close();
             myCameraDevice = null;
         }
     };
