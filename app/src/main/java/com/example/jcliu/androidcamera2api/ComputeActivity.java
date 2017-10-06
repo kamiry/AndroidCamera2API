@@ -1,13 +1,20 @@
 package com.example.jcliu.androidcamera2api;
 
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.os.Environment;
+import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,14 +25,27 @@ import java.io.InputStream;
 public class ComputeActivity extends AppCompatActivity {
 
     private static final String TAG = "AndroidCamera2API";
+    protected static final int PROGRESS = 0x10000;
+    private ImageView iv;
+    private Bitmap bitmap = null;
+    double[] lightsourceH, lightsourceV;
+    int peakPos = 0, w, i1=0, i2=0;
+    private ProgressBar pbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compute);
+        iv = (ImageView) findViewById(R.id.imageView);
+        pbar = (ProgressBar) findViewById(R.id.progressBar) ;
+        //
+        Intent it = getIntent();
+        String fname = it.getStringExtra("filename");
+        Log.d(TAG, "Compute, filename =" + fname);
+        //
+        fname = "WhiteISO500Exp10_1507187344233.jpg";
 
-        Bitmap bitmap = null;
-        File f = new File(_path);
+        File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         try {
@@ -33,40 +53,78 @@ public class ComputeActivity extends AppCompatActivity {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        image.setImageBitmap(bitmap);
-
-        //lightsourceCalc();
+        showImg();
+        waveCalcThd();
     }
 
-/*
+    void showImg() {
+        int iw, ih, vw, vh;
+        boolean needRotate;
+
+        iw = bitmap.getWidth();
+        ih = bitmap.getHeight();
+
+        if (iw < ih) {
+            needRotate = false;
+        } else {
+            needRotate = true;
+        }
+        Log.d(TAG, "iw=" + iw + ",ih=" + ih);
+
+        if (needRotate) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+        iv.setImageBitmap(bitmap);
+    }
+
+    // calculate light source wavelength
+    public void waveCalcThd(){
+        pbar.setVisibility(View.VISIBLE);
+        Log.d(TAG, "Progress bar: set Visible");
+        pbar.setMax(100);
+        pbar.setProgress(0);
+
+        Thread thread = new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try{
+                            if (bitmap != null) {
+                                lightsourceCalc();
+                            }
+                        } catch (Exception e){
+                            e.printStackTrace();
+                        }
+                        runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        pbar.setVisibility(View.GONE);
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
+        thread.start();
+    }
+
     public void lightsourceCalc(){
-        AssetManager assetManager = getAssets();
-        InputStream inputStream = null;
-        Bitmap bitmap;
+
         double peak = 0, l_min=1e100;
 
-
-        Log.v(TAG, "enter lightsourceCalc()");
-        try {
-            //inputStream = assetManager.open("lightsource.jpg");
-            inputStream = assetManager.open("lightsource2.jpg");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.v("progress", "exception");
-        }
-        Log.v("progress", "assets ok");
-        bitmap = BitmapFactory.decodeStream(inputStream);
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
-        Log.v("progress", "height=" + height + ", width="+ width);
+        Log.d(TAG, "image height=" + height + ", width="+ width);
 
         lightsourceH = null;
         lightsourceV = null;
         lightsourceH = new double[width]; // horizontal
         lightsourceV = new double[height]; // vertical
-        //double[][] gray = new double[height][width];  // gray image
 
-        // find peak index in center column, convert to gray image in gray[][]
+        // find peak index in center column
         for(int x=0; x<width; x++){
             double accValue = 0;
             for(int y=0; y<height; y++){
@@ -89,7 +147,8 @@ public class ComputeActivity extends AppCompatActivity {
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
         }
-        Log.v("progress", "peak value="+peak+", pos="+peakPos+", min="+l_min);
+        Log.d(TAG, "peak value="+peak+", pos="+peakPos+", min="+l_min);
+        /*
         double th = (l_min + (peak-l_min)*0.1353);
         for(int i=peakPos;i>=0;i--){
             if (lightsourceH[i] < th) {
@@ -126,7 +185,21 @@ public class ComputeActivity extends AppCompatActivity {
             msg.arg2 = y;
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
-        }
+        }*/
     }
-*/
+
+
+    private Handler mHandler = new Handler(){
+        public void handleMessage(Message msg){
+            switch (msg.what){
+                case PROGRESS:
+                    int total = msg.arg1;
+                    int current = msg.arg2;
+                    int count = (current*100/total);
+                    pbar.setProgress(count);
+                    //Log.v("progress", "current:"+Integer.toString(current)+", now:"+Integer.toString(count));
+                    break;
+            }
+        }
+    };
 }

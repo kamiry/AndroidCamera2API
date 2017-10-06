@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar focusSeekBar;
     String fname_prefix="White";
     String[] fname_options = {"Cal", "White", "Air", "Water"};
+    private int photoOption=0;
+    private String [] photoFilename = new String[4];
 
     // option menu
     @Override
@@ -109,12 +111,14 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 fname_prefix = fname_options[i];
+                                photoOption = i;
                                 Log.d(TAG, "photo option:"+fname_prefix);
                             }
                         }).show();
                 break;
             case R.id.computation:
                 Intent it = new Intent(this, ComputeActivity.class);
+                it.putExtra("filename", photoFilename[photoOption]);
                 startActivity(it);
                 break;
         }
@@ -387,7 +391,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         Log.e(TAG, "onPause");
         stopBackgroundThread();
-
     }
 
     protected void takePicture(){
@@ -428,6 +431,7 @@ public class MainActivity extends AppCompatActivity {
             // file name
             String prefix = fname_prefix + "ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
             String fname = prefix+".jpg";
+            photoFilename[photoOption] = fname; // record for calculating spectrum
             final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
