@@ -102,6 +102,15 @@ public class ComputeActivity extends AppCompatActivity {
                                     @Override
                                     public void run() {
                                         pbar.setVisibility(View.GONE);
+                                        Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
+                                        //it.putExtra("wavelength", wavelength);
+                                        it.putExtra("lightsource", lightsourceH);
+                                        //it.putExtra("darksource", darksource);
+                                        //it.putExtra("spectro", spectro);
+                                        //it.putExtra("SpectroR", spectroR);
+                                        //it.putExtra("SpectroG", spectroG);
+                                        //it.putExtra("SpectroB", spectroB);
+                                        startActivity(it);
                                     }
                                 }
                         );

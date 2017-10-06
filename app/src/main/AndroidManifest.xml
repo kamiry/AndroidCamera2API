@@ -21,7 +21,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ComputeActivity"></activity>
+        <activity android:name=".ComputeActivity" />
+        <activity android:name=".ChartActivity"></activity>
     </application>
 
 </manifest>
