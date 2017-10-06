@@ -28,34 +28,35 @@ public class ChartActivity extends AppCompatActivity {
 
         Intent it = getIntent();
         //wavelength = it.getDoubleArrayExtra("wavelength");
-        spectroR = it.getDoubleArrayExtra("lightsource");
-        //spectroG = it.getDoubleArrayExtra("darksource");
+        spectroR = it.getDoubleArrayExtra("lightsource1");
+        spectroG = it.getDoubleArrayExtra("lightsource2");
         //spectroB = it.getDoubleArrayExtra("spectro");
         //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
-        Log.d(TAG, "lightsource:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
+        Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
+        Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
         //Log.v("msg", "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         View v = drawChart();
         chartContainer.addView(v, 0);
     }
 
     public View drawChart(){
-        XYSeries RSeries = new XYSeries(" lightsource ");
-        //XYSeries GSeries = new XYSeries(" darksource ");
+        XYSeries RSeries = new XYSeries(" lightsource1 ");
+        XYSeries GSeries = new XYSeries(" lightsource2 ");
         //XYSeries BSeries = new XYSeries(" spectro ");
         //XYSeries ASeries = new XYSeries(" all ");
         //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         for(int i=0;i<spectroR.length;i++){
             RSeries.add(i, spectroR[i]);
-            //GSeries.add(wavelength[i], spectroG[i]);
+            GSeries.add(i, spectroG[i]);
             //BSeries.add(wavelength[i], spectroB[i]);
             //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
         }
-
+        Log.d(TAG, "add ok");
         // Creating a dataset to hold each series
         XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
         // Adding Income Series to the dataset
         dataset.addSeries(RSeries);
-        //dataset.addSeries(GSeries);
+        dataset.addSeries(GSeries);
         //dataset.addSeries(BSeries);
         //dataset.addSeries(ASeries);
 
@@ -69,9 +70,9 @@ public class ChartActivity extends AppCompatActivity {
         RSeriesRenderer.setLineWidth(2);
         //xySeriesRenderer.setDisplayChartValues(true);
 
-        //XYSeriesRenderer GSeriesRenderer = new XYSeriesRenderer();
-        //GSeriesRenderer.setColor(Color.GREEN);
-        //GSeriesRenderer.setLineWidth(2);
+        XYSeriesRenderer GSeriesRenderer = new XYSeriesRenderer();
+        GSeriesRenderer.setColor(Color.GREEN);
+        GSeriesRenderer.setLineWidth(2);
 
         //XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
         //BSeriesRenderer.setColor(Color.BLUE);
@@ -107,7 +108,7 @@ public class ChartActivity extends AppCompatActivity {
         //}
 
         multiRenderer.addSeriesRenderer(RSeriesRenderer);
-        //multiRenderer.addSeriesRenderer(GSeriesRenderer);
+        multiRenderer.addSeriesRenderer(GSeriesRenderer);
         //multiRenderer.addSeriesRenderer(BSeriesRenderer);
         //multiRenderer.addSeriesRenderer(ASeriesRenderer);
 

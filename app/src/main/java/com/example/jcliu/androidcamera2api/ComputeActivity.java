@@ -25,11 +25,11 @@ import java.io.InputStream;
 public class ComputeActivity extends AppCompatActivity {
 
     private static final String TAG = "AndroidCamera2API";
-    protected static final int PROGRESS = 0x10000;
+    protected static final int PROGRESS = 0x10000, PROGRESS2 = 0x10001, PROGRESS3 = 0x10002, PROGRESS4 = 0x10003;
     private ImageView iv;
     private Bitmap bitmap = null;
-    double[] lightsourceH, lightsourceV;
-    int peakPos = 0, w, i1=0, i2=0;
+    double[] lightsourceH, lightsourceV1, lightsourceV2, lightsourceV3;
+    int peakPos = 0, peakPosL, peakPosR, w, i1=0, i2=0;
     private ProgressBar pbar;
 
     @Override
@@ -104,7 +104,8 @@ public class ComputeActivity extends AppCompatActivity {
                                         pbar.setVisibility(View.GONE);
                                         Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                                         //it.putExtra("wavelength", wavelength);
-                                        it.putExtra("lightsource", lightsourceH);
+                                        it.putExtra("lightsource1", lightsourceV1);
+                                        it.putExtra("lightsource2", lightsourceV2);
                                         //it.putExtra("darksource", darksource);
                                         //it.putExtra("spectro", spectro);
                                         //it.putExtra("SpectroR", spectroR);
@@ -129,9 +130,11 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "image height=" + height + ", width="+ width);
 
         lightsourceH = null;
-        lightsourceV = null;
+        lightsourceV1 = null; lightsourceV2 = null; lightsourceV3 = null;
         lightsourceH = new double[width]; // horizontal
-        lightsourceV = new double[height]; // vertical
+        lightsourceV1 = new double[height]; // vertical
+        lightsourceV2 = new double[height]; // vertical
+        lightsourceV3 = new double[height]; // vertical
 
         // find peak index in center column
         for(int x=0; x<width; x++){
@@ -157,7 +160,8 @@ public class ComputeActivity extends AppCompatActivity {
             mHandler.sendMessage(msg);
         }
         Log.d(TAG, "peak value="+peak+", pos="+peakPos+", min="+l_min);
-        /*
+
+        // two side lobes
         double th = (l_min + (peak-l_min)*0.1353);
         for(int i=peakPos;i>=0;i--){
             if (lightsourceH[i] < th) {
@@ -172,10 +176,10 @@ public class ComputeActivity extends AppCompatActivity {
             }
         }
         w = 3*Math.max(peakPos-i1,i2-peakPos);
-        Log.v("progress", "i1="+i1+", i2="+i2+", w="+w);
+        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
         i1 = peakPos - Math.round(w/2);
         i2 = peakPos + Math.round(w/2);
-        Log.v("progress", "i1="+i1+", i2="+i2+", w="+w);
+        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
 
         // integral
         for(int y=0; y<height; y++){
@@ -186,7 +190,7 @@ public class ComputeActivity extends AppCompatActivity {
                 //accValue += gray[y][x];
                 accValue += value;
             }
-            lightsourceV[height-y-1] = accValue;
+            lightsourceV1[height-y-1] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS2;
@@ -194,7 +198,50 @@ public class ComputeActivity extends AppCompatActivity {
             msg.arg2 = y;
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
-        }*/
+        }
+        Log.d(TAG,"lightsource1:" + lightsourceV1[0] + ", " + lightsourceV1[height/2]);
+
+        // find peak in Right
+        peak = 0; l_min=1e100;
+        for(int x=0; x<500; x++){
+            double accValue = lightsourceH[i2+x];
+            if(accValue > peak) {
+                peak = accValue;
+                peakPosR = i2+x;
+            }
+            if(accValue < l_min) l_min = accValue;
+
+            Message msg = new Message();
+            msg.what = PROGRESS3;
+            msg.arg1 = 500;
+            msg.arg2 = x;
+            //Log.v("progress", "y="+Integer.toString(y));
+            mHandler.sendMessage(msg);
+        }
+        Log.d(TAG, "Right peak value="+peak+", pos="+peakPosR+", min="+l_min);
+
+        // integral
+        i1 = peakPosR - Math.round(w/2);
+        i2 = peakPosR + Math.round(w/2);
+        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
+        for(int y=0; y<height; y++){
+            double accValue = 0;
+            for(int x=i1; x<=i2; x++){
+                int c = bitmap.getPixel(x, y);
+                double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                //accValue += gray[y][x];
+                accValue += value;
+            }
+            lightsourceV2[height-y-1] = accValue;
+
+            Message msg = new Message();
+            msg.what = PROGRESS4;
+            msg.arg1 = height;
+            msg.arg2 = y;
+            //Log.v("progress", "y="+Integer.toString(y));
+            mHandler.sendMessage(msg);
+        }
+        Log.d(TAG,"lightsource2:" + lightsourceV2[0] + ", " + lightsourceV2[height/2]);
     }
 
 
@@ -204,9 +251,27 @@ public class ComputeActivity extends AppCompatActivity {
                 case PROGRESS:
                     int total = msg.arg1;
                     int current = msg.arg2;
-                    int count = (current*100/total);
+                    int count = (current*100/total)*5/10;
                     pbar.setProgress(count);
                     //Log.v("progress", "current:"+Integer.toString(current)+", now:"+Integer.toString(count));
+                    break;
+                case PROGRESS2:
+                    total = msg.arg1;
+                    current = msg.arg2;
+                    count = 50+(current*100/total)/10;
+                    pbar.setProgress(count);
+                    break;
+                case PROGRESS3:
+                    total = msg.arg1;
+                    current = msg.arg2;
+                    count = 60+(current*100/total)/10;
+                    pbar.setProgress(count);
+                    break;
+                case PROGRESS4:
+                    total = msg.arg1;
+                    current = msg.arg2;
+                    count = 70+(current*100/total)/10;
+                    pbar.setProgress(count);
                     break;
             }
         }
