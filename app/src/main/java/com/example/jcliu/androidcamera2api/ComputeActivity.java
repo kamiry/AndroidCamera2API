@@ -1,5 +1,6 @@
 package com.example.jcliu.androidcamera2api;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -9,9 +10,12 @@ import android.graphics.Matrix;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -31,6 +35,29 @@ public class ComputeActivity extends AppCompatActivity {
     double[] lightsourceH, lightsourceV1, lightsourceV2, lightsourceV3;
     int peakPos = 0, peakPosL, peakPosR, w, i1=0, i2=0;
     private ProgressBar pbar;
+
+    // option menu
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_compute, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id){
+            case R.id.spectrum_option:
+                Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
+                Log.d(TAG, "option spectrum");
+                it.putExtra("lightsource1", lightsourceV1);
+                it.putExtra("lightsource2", lightsourceV2);
+                it.putExtra("lightsource3", lightsourceV3);
+                startActivity(it);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,6 +133,7 @@ public class ComputeActivity extends AppCompatActivity {
                                         //it.putExtra("wavelength", wavelength);
                                         it.putExtra("lightsource1", lightsourceV1);
                                         it.putExtra("lightsource2", lightsourceV2);
+                                        it.putExtra("lightsource3", lightsourceV3);
                                         //it.putExtra("darksource", darksource);
                                         //it.putExtra("spectro", spectro);
                                         //it.putExtra("SpectroR", spectroR);
@@ -190,13 +218,13 @@ public class ComputeActivity extends AppCompatActivity {
                 //accValue += gray[y][x];
                 accValue += value;
             }
-            lightsourceV1[height-y-1] = accValue;
+            //lightsourceV1[height-y-1] = accValue;
+            lightsourceV1[y] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS2;
             msg.arg1 = height;
-            msg.arg2 = y;
-            //Log.v("progress", "y="+Integer.toString(y));
+            msg.arg2 = 1;
             mHandler.sendMessage(msg);
         }
         Log.d(TAG,"lightsource1:" + lightsourceV1[0] + ", " + lightsourceV1[height/2]);
@@ -212,9 +240,9 @@ public class ComputeActivity extends AppCompatActivity {
             if(accValue < l_min) l_min = accValue;
 
             Message msg = new Message();
-            msg.what = PROGRESS3;
+            msg.what = PROGRESS2;
             msg.arg1 = 500;
-            msg.arg2 = x;
+            msg.arg2 = 1;
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
         }
@@ -232,7 +260,52 @@ public class ComputeActivity extends AppCompatActivity {
                 //accValue += gray[y][x];
                 accValue += value;
             }
-            lightsourceV2[height-y-1] = accValue;
+            //lightsourceV2[height-y-1] = accValue;
+            lightsourceV2[y] = accValue;
+
+            Message msg = new Message();
+            msg.what = PROGRESS2;
+            msg.arg1 = height;
+            msg.arg2 = 1;
+            //Log.v("progress", "y="+Integer.toString(y));
+            mHandler.sendMessage(msg);
+        }
+        Log.d(TAG,"lightsource2:" + lightsourceV2[0] + ", " + lightsourceV2[height/2]);
+
+        // find peak in Left
+        i1 = peakPos - Math.round(w/2);
+        peak = 0; l_min=1e100;
+        for(int x=0; x<500; x++){
+            double accValue = lightsourceH[i1-x];
+            if(accValue > peak) {
+                peak = accValue;
+                peakPosL = i1-x;
+            }
+            if(accValue < l_min) l_min = accValue;
+
+            Message msg = new Message();
+            msg.what = PROGRESS2;
+            msg.arg1 = 500;
+            msg.arg2 = 1;
+            //Log.v("progress", "y="+Integer.toString(y));
+            mHandler.sendMessage(msg);
+        }
+        Log.d(TAG, "Left peak value="+peak+", pos="+peakPosL+", min="+l_min);
+
+        // integral
+        i1 = peakPosL - Math.round(w/2);
+        i2 = peakPosL + Math.round(w/2);
+        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
+        for(int y=0; y<height; y++){
+            double accValue = 0;
+            for(int x=i1; x<=i2; x++){
+                int c = bitmap.getPixel(x, y);
+                double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                //accValue += gray[y][x];
+                accValue += value;
+            }
+            //lightsourceV3[height-y-1] = accValue;
+            lightsourceV3[y] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS4;
@@ -241,37 +314,26 @@ public class ComputeActivity extends AppCompatActivity {
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
         }
-        Log.d(TAG,"lightsource2:" + lightsourceV2[0] + ", " + lightsourceV2[height/2]);
+        Log.d(TAG,"lightsource3:" + lightsourceV3[0] + ", " + lightsourceV3[height/2]);
     }
 
-
+    private float progress_count=0;
     private Handler mHandler = new Handler(){
         public void handleMessage(Message msg){
+
             switch (msg.what){
                 case PROGRESS:
                     int total = msg.arg1;
                     int current = msg.arg2;
-                    int count = (current*100/total)*5/10;
-                    pbar.setProgress(count);
+                    progress_count = (current*100/total)*5/10;
+                    pbar.setProgress((int)progress_count);
                     //Log.v("progress", "current:"+Integer.toString(current)+", now:"+Integer.toString(count));
                     break;
                 case PROGRESS2:
                     total = msg.arg1;
                     current = msg.arg2;
-                    count = 50+(current*100/total)/10;
-                    pbar.setProgress(count);
-                    break;
-                case PROGRESS3:
-                    total = msg.arg1;
-                    current = msg.arg2;
-                    count = 60+(current*100/total)/10;
-                    pbar.setProgress(count);
-                    break;
-                case PROGRESS4:
-                    total = msg.arg1;
-                    current = msg.arg2;
-                    count = 70+(current*100/total)/10;
-                    pbar.setProgress(count);
+                    progress_count = progress_count+((float)current*10/(float)total);
+                    pbar.setProgress((int)progress_count);
                     break;
             }
         }

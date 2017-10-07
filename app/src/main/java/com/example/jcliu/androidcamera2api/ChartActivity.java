@@ -30,25 +30,26 @@ public class ChartActivity extends AppCompatActivity {
         //wavelength = it.getDoubleArrayExtra("wavelength");
         spectroR = it.getDoubleArrayExtra("lightsource1");
         spectroG = it.getDoubleArrayExtra("lightsource2");
-        //spectroB = it.getDoubleArrayExtra("spectro");
+        spectroB = it.getDoubleArrayExtra("lightsource3");
         //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
         Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
         Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
-        //Log.v("msg", "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
+        Log.d(TAG, "lightsource3:" + Double.toString(spectroB[0]) + ", "  + Double.toString(spectroB[1]));
+        //og.d(TAG, "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         View v = drawChart();
         chartContainer.addView(v, 0);
     }
 
     public View drawChart(){
-        XYSeries RSeries = new XYSeries(" lightsource1 ");
-        XYSeries GSeries = new XYSeries(" lightsource2 ");
-        //XYSeries BSeries = new XYSeries(" spectro ");
+        XYSeries RSeries = new XYSeries(" Center ");
+        XYSeries GSeries = new XYSeries(" Right ");
+        XYSeries BSeries = new XYSeries(" Left ");
         //XYSeries ASeries = new XYSeries(" all ");
         //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         for(int i=0;i<spectroR.length;i++){
             RSeries.add(i, spectroR[i]);
             GSeries.add(i, spectroG[i]);
-            //BSeries.add(wavelength[i], spectroB[i]);
+            BSeries.add(i, spectroB[i]);
             //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
         }
         Log.d(TAG, "add ok");
@@ -57,7 +58,7 @@ public class ChartActivity extends AppCompatActivity {
         // Adding Income Series to the dataset
         dataset.addSeries(RSeries);
         dataset.addSeries(GSeries);
-        //dataset.addSeries(BSeries);
+        dataset.addSeries(BSeries);
         //dataset.addSeries(ASeries);
 
 
@@ -74,9 +75,9 @@ public class ChartActivity extends AppCompatActivity {
         GSeriesRenderer.setColor(Color.GREEN);
         GSeriesRenderer.setLineWidth(2);
 
-        //XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
-        //BSeriesRenderer.setColor(Color.BLUE);
-        //BSeriesRenderer.setLineWidth(2);
+        XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
+        BSeriesRenderer.setColor(Color.BLUE);
+        BSeriesRenderer.setLineWidth(2);
 
         //XYSeriesRenderer ASeriesRenderer = new XYSeriesRenderer();
         //ASeriesRenderer.setColor(Color.BLACK);
@@ -84,7 +85,7 @@ public class ChartActivity extends AppCompatActivity {
 
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
-        multiRenderer.setChartTitle("LightSource Spectrum");
+        multiRenderer.setChartTitle("LightSource Raw Spectrum");
         multiRenderer.setChartTitleTextSize(50);
         multiRenderer.setXTitle("wavelength (nm)");// X Title
         //multiRenderer.setYTitle("Energy");// Y Title
@@ -109,7 +110,7 @@ public class ChartActivity extends AppCompatActivity {
 
         multiRenderer.addSeriesRenderer(RSeriesRenderer);
         multiRenderer.addSeriesRenderer(GSeriesRenderer);
-        //multiRenderer.addSeriesRenderer(BSeriesRenderer);
+        multiRenderer.addSeriesRenderer(BSeriesRenderer);
         //multiRenderer.addSeriesRenderer(ASeriesRenderer);
 
         View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
