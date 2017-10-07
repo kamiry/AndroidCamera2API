@@ -32,7 +32,7 @@ public class ComputeActivity extends AppCompatActivity {
     protected static final int PROGRESS = 0x10000, PROGRESS2 = 0x10001, PROGRESS3 = 0x10002, PROGRESS4 = 0x10003;
     private ImageView iv;
     private Bitmap bitmap = null;
-    double[] lightsourceH, lightsourceV1, lightsourceV2, lightsourceV3;
+    public static double[] lightsourceH, lightsourceV1, lightsourceV2, lightsourceV3;
     int peakPos = 0, peakPosL, peakPosR, w, i1=0, i2=0;
     private ProgressBar pbar;
 

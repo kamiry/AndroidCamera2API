@@ -9,4 +9,8 @@
         android:title="光譜計算"
         app:showAsAction="never"
         />
+    <item android:id="@+id/spectrum_view"
+        android:title="光譜圖表"
+        app:showAsAction="never"
+        />
 </menu>

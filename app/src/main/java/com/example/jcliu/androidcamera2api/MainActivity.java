@@ -121,6 +121,16 @@ public class MainActivity extends AppCompatActivity {
                 it.putExtra("filename", photoFilename[photoOption]);
                 startActivity(it);
                 break;
+            case R.id.spectrum_view:
+                if(ComputeActivity.lightsourceV1 != null) {
+                    Intent it2 = new Intent(this, ChartActivity.class);
+                    it2.putExtra("lightsource1", ComputeActivity.lightsourceV1);
+                    it2.putExtra("lightsource2", ComputeActivity.lightsourceV2);
+                    it2.putExtra("lightsource3", ComputeActivity.lightsourceV3);
+                    startActivity(it2);
+                } else
+                    Toast.makeText(MainActivity.this, "No lightsource spectrum", Toast.LENGTH_SHORT).show();
+                break;
         }
         return super.onOptionsItemSelected(item);
     }

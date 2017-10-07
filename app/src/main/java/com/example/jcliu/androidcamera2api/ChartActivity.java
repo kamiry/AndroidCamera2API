@@ -25,7 +25,7 @@ public class ChartActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
         LinearLayout chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
-
+        Log.d(TAG, "access:" + ComputeActivity.lightsourceH[0]);
         Intent it = getIntent();
         //wavelength = it.getDoubleArrayExtra("wavelength");
         spectroR = it.getDoubleArrayExtra("lightsource1");
