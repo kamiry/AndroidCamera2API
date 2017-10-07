@@ -117,9 +117,25 @@ public class MainActivity extends AppCompatActivity {
                         }).show();
                 break;
             case R.id.computation:
-                Intent it = new Intent(this, ComputeActivity.class);
-                it.putExtra("filename", photoFilename[photoOption]);
-                startActivity(it);
+                AlertDialog.Builder builder2 = new AlertDialog.Builder(MainActivity.this);
+                builder2.setTitle(R.string.compute_object)
+                        .setItems(R.array.photo_option, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                switch(i){
+                                    case 0: //calibrate
+                                        Intent it = new Intent(MainActivity.this, CalActivity.class);
+                                        it.putExtra("filename", photoFilename[0]);
+                                        startActivity(it);
+                                        break;
+                                    case 1: //whitelight
+                                        it = new Intent(MainActivity.this, ComputeActivity.class);
+                                        it.putExtra("filename", photoFilename[1]);
+                                        startActivity(it);
+                                        break;
+                                }
+                            }
+                        }).show();
                 break;
             case R.id.spectrum_view:
                 if(ComputeActivity.lightsourceV1 != null) {
