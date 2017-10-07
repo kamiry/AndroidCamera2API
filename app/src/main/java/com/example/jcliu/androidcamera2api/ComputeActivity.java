@@ -193,55 +193,59 @@ public class ComputeActivity extends AppCompatActivity {
         if(signalSource[sourceIdx][0] == null) {
             for (int i = 0; i < 3; i++) {
                 signalSource[sourceIdx][i] = new double[height];
-                Log.d(TAG, "initialize source array "+ i);
+                Log.d(TAG, "initialize source array[" + sourceIdx +"]["+ i + "]");
             }
         }
+        Log.d(TAG, "segmented?" + MainActivity.segmented);
 
-        // find peak index in center column
-        for(int x=0; x<width; x++){
-            double accValue = 0;
-            for(int y=0; y<height; y++){
-                int c = bitmap.getPixel(x, y);
-                double value = Color.red(c) + Color.green(c) + Color.blue(c);
-                //gray[y][x] = value;
-                accValue += value;
-            }
-            lightsourceH[x] = accValue;
+        if(!MainActivity.segmented) {
+            // find peak index in center column
+            for (int x = 0; x < width; x++) {
+                double accValue = 0;
+                for (int y = 0; y < height; y++) {
+                    int c = bitmap.getPixel(x, y);
+                    double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                    //gray[y][x] = value;
+                    accValue += value;
+                }
+                lightsourceH[x] = accValue;
 
-            if(accValue > peak) {
-                peak = accValue;
-                peakPos = x;
-            }
-            if(accValue < l_min) l_min = accValue;
+                if (accValue > peak) {
+                    peak = accValue;
+                    peakPos = x;
+                }
+                if (accValue < l_min) l_min = accValue;
 
-            Message msg = new Message();
-            msg.what = PROGRESS;
-            msg.arg1 = width;
-            msg.arg2 = x;
-            //Log.v("progress", "y="+Integer.toString(y));
-            mHandler.sendMessage(msg);
-        }
-        Log.d(TAG, "peak value="+peak+", pos="+peakPos+", min="+l_min);
+                Message msg = new Message();
+                msg.what = PROGRESS;
+                msg.arg1 = width;
+                msg.arg2 = x;
+                //Log.v("progress", "y="+Integer.toString(y));
+                mHandler.sendMessage(msg);
+            }
+            Log.d(TAG, "peak value=" + peak + ", pos=" + peakPos + ", min=" + l_min);
 
-        // two side lobes
-        double th = (l_min + (peak-l_min)*0.453);
-        for(int i=peakPos;i>=0;i--){
-            if (lightsourceH[i] < th) {
-                i1 = i;
-                break;
+            // two side lobes
+            double th = (l_min + (peak - l_min) * 0.453);
+            for (int i = peakPos; i >= 0; i--) {
+                if (lightsourceH[i] < th) {
+                    i1 = i;
+                    break;
+                }
             }
-        }
-        for(int i=peakPos;i<width;i++){
-            if (lightsourceH[i] < th) {
-                i2 = i;
-                break;
+            for (int i = peakPos; i < width; i++) {
+                if (lightsourceH[i] < th) {
+                    i2 = i;
+                    break;
+                }
             }
-        }
-        w = 3*Math.max(peakPos-i1,i2-peakPos);
-        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
-        x2_l = peakPos - Math.round(w/2);
-        x2_r = peakPos + Math.round(w/2);
-        Log.d(TAG, "x2_l="+x2_l+", x2_r="+x2_r+", w="+w);
+            w = 3 * Math.max(peakPos - i1, i2 - peakPos);
+            Log.d(TAG, "i1=" + i1 + ", i2=" + i2 + ", w=" + w);
+            x2_l = peakPos - Math.round(w / 2);
+            x2_r = peakPos + Math.round(w / 2);
+            Log.d(TAG, "x2_l=" + x2_l + ", x2_r=" + x2_r + ", w=" + w);
+        } else
+            progress_count=50;
 
         // integral
         for(int y=0; y<height; y++){
@@ -265,27 +269,30 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG,"lightsource1:" + signalSource[sourceIdx][1][0]  + ", " + signalSource[sourceIdx][1][height/2]);
 
         // find peak in Right
-        peak = 0; l_min=1e100;
-        for(int x=0; x<500; x++){
-            double accValue = lightsourceH[i2+x];
-            if(accValue > peak) {
-                peak = accValue;
-                peakPosR = i2+x;
+        if(!MainActivity.segmented) {
+            peak = 0;
+            l_min = 1e100;
+            for (int x = 0; x < 500; x++) {
+                double accValue = lightsourceH[i2 + x];
+                if (accValue > peak) {
+                    peak = accValue;
+                    peakPosR = i2 + x;
+                }
+                if (accValue < l_min) l_min = accValue;
+
+                Message msg = new Message();
+                msg.what = PROGRESS2;
+                msg.arg1 = 500;
+                msg.arg2 = 1;
+                //Log.v("progress", "y="+Integer.toString(y));
+                mHandler.sendMessage(msg);
             }
-            if(accValue < l_min) l_min = accValue;
+            Log.d(TAG, "Right peak value=" + peak + ", pos=" + peakPosR + ", min=" + l_min);
 
-            Message msg = new Message();
-            msg.what = PROGRESS2;
-            msg.arg1 = 500;
-            msg.arg2 = 1;
-            //Log.v("progress", "y="+Integer.toString(y));
-            mHandler.sendMessage(msg);
+            // integral
+            x3_l = peakPosR - Math.round(w / 2);
+            x3_r = peakPosR + Math.round(w / 2);
         }
-        Log.d(TAG, "Right peak value="+peak+", pos="+peakPosR+", min="+l_min);
-
-        // integral
-        x3_l = peakPosR - Math.round(w/2);
-        x3_r = peakPosR + Math.round(w/2);
         Log.d(TAG, "x3_l="+x3_l +", x3_r="+x3_r+", w="+w);
         for(int y=0; y<height; y++){
             double accValue = 0;
@@ -308,29 +315,35 @@ public class ComputeActivity extends AppCompatActivity {
         }
         Log.d(TAG,"lightsource2:" + signalSource[sourceIdx][2][0] + ", " + signalSource[sourceIdx][2][height/2]);
 
-        // find peak in Left
-        i1 = peakPos - Math.round(w/2);
-        peak = 0; l_min=1e100;
-        for(int x=0; x<500; x++){
-            double accValue = lightsourceH[i1-x];
-            if(accValue > peak) {
-                peak = accValue;
-                peakPosL = i1-x;
+        if(!MainActivity.segmented) {
+            // find peak in Left
+            i1 = peakPos - Math.round(w / 2);
+            peak = 0;
+            l_min = 1e100;
+            for (int x = 0; x < 500; x++) {
+                double accValue = lightsourceH[i1 - x];
+                if (accValue > peak) {
+                    peak = accValue;
+                    peakPosL = i1 - x;
+                }
+                if (accValue < l_min) l_min = accValue;
+
+                Message msg = new Message();
+                msg.what = PROGRESS2;
+                msg.arg1 = 500;
+                msg.arg2 = 1;
+                //Log.v("progress", "y="+Integer.toString(y));
+                mHandler.sendMessage(msg);
             }
-            if(accValue < l_min) l_min = accValue;
+            Log.d(TAG, "Left peak value=" + peak + ", pos=" + peakPosL + ", min=" + l_min);
 
-            Message msg = new Message();
-            msg.what = PROGRESS2;
-            msg.arg1 = 500;
-            msg.arg2 = 1;
-            //Log.v("progress", "y="+Integer.toString(y));
-            mHandler.sendMessage(msg);
+            // integral
+            x1_l = peakPosL - Math.round(w / 2);
+            x1_r = peakPosL + Math.round(w / 2);
+
+            MainActivity.segmented = true;
         }
-        Log.d(TAG, "Left peak value="+peak+", pos="+peakPosL+", min="+l_min);
 
-        // integral
-        x1_l = peakPosL - Math.round(w/2);
-        x1_r = peakPosL + Math.round(w/2);
         Log.d(TAG, "x1_l="+x1_l+", x1_r="+x1_r+", w="+w);
         for(int y=0; y<height; y++){
             double accValue = 0;

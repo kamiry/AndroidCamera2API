@@ -130,7 +130,6 @@ public class MainActivity extends AppCompatActivity {
                                         startActivity(it);
                                         break;
                                     case 1: //whitelight
-                                        segmented = true;
                                         Intent it2 = new Intent(MainActivity.this, ComputeActivity.class);
                                         //it2.putExtra("filename", photoFilename[1]);
                                         it2.putExtra("class", 0); //0: White light
@@ -140,27 +139,89 @@ public class MainActivity extends AppCompatActivity {
                                     case 2: //Air
                                         Intent it3 = new Intent(MainActivity.this, ComputeActivity.class);
                                         //it2.putExtra("filename", photoFilename[1]);
-                                        it3.putExtra("class", 1); //0: White light
-                                        it3.putExtra("filename", "WhiteISO500Exp10_1507187344233.jpg");
+                                        it3.putExtra("class", 1);
+                                        it3.putExtra("filename", "AirISO3000Exp100_1507187020307.jpg");
                                         startActivity(it3);
+                                        break;
+                                    case 3: //Water
+                                        Intent it4 = new Intent(MainActivity.this, ComputeActivity.class);
+                                        //it2.putExtra("filename", photoFilename[1]);
+                                        it4.putExtra("class", 2);
+                                        it4.putExtra("filename", "WaterISO3000Exp100_1507187197782.jpg");
+                                        startActivity(it4);
                                         break;
                                 }
                             }
                         }).show();
                 break;
             case R.id.spectrum_view:
-                if(ComputeActivity.signalSource[0][0] != null) {
-                    Intent it5 = new Intent(this, ChartActivity.class);
-                    it5.putExtra("title", "LightSource Raw Spectrum");
-                    it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
-                    it5.putExtra("signal name 1", " Center ");
-                    it5.putExtra("lightsource2", ComputeActivity.signalSource[0][2]);
-                    it5.putExtra("signal name 2", " Right ");
-                    it5.putExtra("lightsource3", ComputeActivity.signalSource[0][0]);
-                    it5.putExtra("signal name 3", " Left ");
-                    startActivity(it5);
-                } else
-                    Toast.makeText(MainActivity.this, "No lightsource spectrum", Toast.LENGTH_SHORT).show();
+                boolean breaknote = false;
+                String notify_msg = "";
+
+                if(ComputeActivity.signalSource == null){
+                    Toast.makeText(MainActivity.this, "Lack all spectrum data, perform spectrum calculation first", Toast.LENGTH_SHORT).show();
+                    break;
+                }
+                if(ComputeActivity.signalSource[0][0] == null) {
+                    notify_msg += "light source, ";
+                    breaknote = true;
+                }
+                if(ComputeActivity.signalSource[1][0] == null) {
+                    notify_msg += "sample in air, ";
+                    breaknote = true;
+                }
+                if(ComputeActivity.signalSource[2][0] == null) {
+                    notify_msg += "sample in water, ";
+                    breaknote = true;
+                }
+
+                if(breaknote) {
+                    Toast.makeText(MainActivity.this, "Lack spectrum of " + notify_msg + "please perform calculation first", Toast.LENGTH_LONG).show();
+                    break;
+                }
+
+                AlertDialog.Builder builder3 = new AlertDialog.Builder(MainActivity.this);
+                builder3.setTitle(R.string.spectrum_object)
+                        .setItems(R.array.sample_option, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                switch(i){
+                                    case 0: //Left sample
+                                        Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                        it5.putExtra("title", "Left Sample Spectrum");
+                                        it5.putExtra("lightsource1", ComputeActivity.signalSource[0][0]);
+                                        it5.putExtra("signal name 1", " White Light ");
+                                        it5.putExtra("lightsource2", ComputeActivity.signalSource[1][0]);
+                                        it5.putExtra("signal name 2", " In Air ");
+                                        it5.putExtra("lightsource3", ComputeActivity.signalSource[2][0]);
+                                        it5.putExtra("signal name 3", " In Water ");
+                                        startActivity(it5);
+                                        break;
+                                    case 1: //Central sample
+                                        it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                        it5.putExtra("title", "Central Sample Spectrum");
+                                        it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
+                                        it5.putExtra("signal name 1", " White Light ");
+                                        it5.putExtra("lightsource2", ComputeActivity.signalSource[1][1]);
+                                        it5.putExtra("signal name 2", " In Air ");
+                                        it5.putExtra("lightsource3", ComputeActivity.signalSource[2][1]);
+                                        it5.putExtra("signal name 3", " In Water ");
+                                        startActivity(it5);
+                                        break;
+                                    case 2: //Right sample
+                                        it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                        it5.putExtra("title", "Right Sample Spectrum");
+                                        it5.putExtra("lightsource1", ComputeActivity.signalSource[0][2]);
+                                        it5.putExtra("signal name 1", " White Light ");
+                                        it5.putExtra("lightsource2", ComputeActivity.signalSource[1][2]);
+                                        it5.putExtra("signal name 2", " In Air ");
+                                        it5.putExtra("lightsource3", ComputeActivity.signalSource[2][2]);
+                                        it5.putExtra("signal name 3", " In Water ");
+                                        startActivity(it5);
+                                        break;
+                                }
+                            }
+                        }).show();
                 break;
         }
         return super.onOptionsItemSelected(item);

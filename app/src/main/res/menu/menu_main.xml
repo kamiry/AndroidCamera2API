@@ -10,7 +10,7 @@
         app:showAsAction="never"
         />
     <item android:id="@+id/spectrum_view"
-        android:title="光譜圖表"
+        android:title="樣品光譜"
         app:showAsAction="never"
         />
 </menu>

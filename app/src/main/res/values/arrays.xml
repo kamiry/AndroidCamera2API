@@ -6,4 +6,9 @@
         <item>sample in air</item>
         <item>sample in water</item>
     </string-array>
+    <string-array name="sample_option">
+        <item>Left sample</item>
+        <item>Central sample</item>
+        <item>Right sample</item>
+    </string-array>
 </resources>
