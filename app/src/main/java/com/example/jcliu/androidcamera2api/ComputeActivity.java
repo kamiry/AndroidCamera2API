@@ -82,7 +82,7 @@ public class ComputeActivity extends AppCompatActivity {
         //
         if(signalSource == null){
             Log.d("TAG", "initialize 3-D signal source");
-            Toast.makeText(ComputeActivity.this, "initialize 3-D signal source", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(ComputeActivity.this, "initialize 3-D signal source", Toast.LENGTH_SHORT).show();
             signalSource = new double[3][][];
             for(int i=0; i<3; i++){
                 signalSource[i] = new double[3][];
@@ -107,6 +107,7 @@ public class ComputeActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         showImg();
+        if(!MainActivity.segmented) Toast.makeText(ComputeActivity.this, "Perfrom sample segmentation", Toast.LENGTH_SHORT).show();
         waveCalcThd();
     }
 
