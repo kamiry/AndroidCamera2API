@@ -129,9 +129,9 @@ public class MainActivity extends AppCompatActivity {
                                         startActivity(it);
                                         break;
                                     case 1: //whitelight
-                                        it = new Intent(MainActivity.this, ComputeActivity.class);
-                                        it.putExtra("filename", photoFilename[1]);
-                                        startActivity(it);
+                                        Intent it2 = new Intent(MainActivity.this, ComputeActivity.class);
+                                        it2.putExtra("filename", photoFilename[1]);
+                                        startActivity(it2);
                                         break;
                                 }
                             }
@@ -139,11 +139,11 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.spectrum_view:
                 if(ComputeActivity.lightsourceV1 != null) {
-                    Intent it2 = new Intent(this, ChartActivity.class);
-                    it2.putExtra("lightsource1", ComputeActivity.lightsourceV1);
-                    it2.putExtra("lightsource2", ComputeActivity.lightsourceV2);
-                    it2.putExtra("lightsource3", ComputeActivity.lightsourceV3);
-                    startActivity(it2);
+                    Intent it3 = new Intent(this, ChartActivity.class);
+                    it3.putExtra("lightsource1", ComputeActivity.lightsourceV1);
+                    it3.putExtra("lightsource2", ComputeActivity.lightsourceV2);
+                    it3.putExtra("lightsource3", ComputeActivity.lightsourceV3);
+                    startActivity(it3);
                 } else
                     Toast.makeText(MainActivity.this, "No lightsource spectrum", Toast.LENGTH_SHORT).show();
                 break;

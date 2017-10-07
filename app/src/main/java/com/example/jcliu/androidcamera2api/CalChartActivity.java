@@ -1,5 +1,6 @@
 package com.example.jcliu.androidcamera2api;
 
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,7 +16,7 @@ import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-public class ChartActivity extends AppCompatActivity {
+public class CalChartActivity extends AppCompatActivity {
 
     double[] spectroR, spectroG, spectroB, wavelength;
     private static final String TAG = "AndroidCamera2API";
@@ -27,47 +28,48 @@ public class ChartActivity extends AppCompatActivity {
         LinearLayout chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
         Intent it = getIntent();
         //wavelength = it.getDoubleArrayExtra("wavelength");
-        spectroR = it.getDoubleArrayExtra("lightsource1");
-        spectroG = it.getDoubleArrayExtra("lightsource2");
-        spectroB = it.getDoubleArrayExtra("lightsource3");
+        spectroR = it.getDoubleArrayExtra("calsource");
+        //spectroG = it.getDoubleArrayExtra("lightsource2");
+        //spectroB = it.getDoubleArrayExtra("lightsource3");
         //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
         Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
-        Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
-        Log.d(TAG, "lightsource3:" + Double.toString(spectroB[0]) + ", "  + Double.toString(spectroB[1]));
+        //Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
+        //Log.d(TAG, "lightsource3:" + Double.toString(spectroB[0]) + ", "  + Double.toString(spectroB[1]));
         //og.d(TAG, "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         View v = drawChart();
         chartContainer.addView(v, 0);
     }
 
     public View drawChart(){
-        XYSeries RSeries = new XYSeries(" Center ");
-        XYSeries GSeries = new XYSeries(" Right ");
-        XYSeries BSeries = new XYSeries(" Left ");
+        XYSeries RSeries = new XYSeries(" Calibration light ");
+        //XYSeries GSeries = new XYSeries(" Right ");
+        //XYSeries BSeries = new XYSeries(" Left ");
         //XYSeries ASeries = new XYSeries(" all ");
         //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         if(CalActivity.wavelength == null) {
             for (int i = 0; i < spectroR.length; i++) {
                 RSeries.add(i, spectroR[i]);
-                GSeries.add(i, spectroG[i]);
-                BSeries.add(i, spectroB[i]);
+                //GSeries.add(i, spectroG[i]);
+                //BSeries.add(i, spectroB[i]);
                 //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
             }
         }
         else{
             for (int i = 0; i < spectroR.length; i++) {
                 RSeries.add(CalActivity.wavelength[i], spectroR[i]);
-                GSeries.add(CalActivity.wavelength[i], spectroG[i]);
-                BSeries.add(CalActivity.wavelength[i], spectroB[i]);
+                //GSeries.add(i, spectroG[i]);
+                //BSeries.add(i, spectroB[i]);
                 //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
             }
         }
+
         Log.d(TAG, "add ok");
         // Creating a dataset to hold each series
         XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
         // Adding Income Series to the dataset
         dataset.addSeries(RSeries);
-        dataset.addSeries(GSeries);
-        dataset.addSeries(BSeries);
+        //dataset.addSeries(GSeries);
+        //dataset.addSeries(BSeries);
         //dataset.addSeries(ASeries);
 
 
@@ -80,13 +82,13 @@ public class ChartActivity extends AppCompatActivity {
         RSeriesRenderer.setLineWidth(2);
         //xySeriesRenderer.setDisplayChartValues(true);
 
-        XYSeriesRenderer GSeriesRenderer = new XYSeriesRenderer();
-        GSeriesRenderer.setColor(Color.GREEN);
-        GSeriesRenderer.setLineWidth(2);
+        //XYSeriesRenderer GSeriesRenderer = new XYSeriesRenderer();
+        //GSeriesRenderer.setColor(Color.GREEN);
+        //GSeriesRenderer.setLineWidth(2);
 
-        XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
-        BSeriesRenderer.setColor(Color.BLUE);
-        BSeriesRenderer.setLineWidth(2);
+        //XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
+        //BSeriesRenderer.setColor(Color.BLUE);
+        //BSeriesRenderer.setLineWidth(2);
 
         //XYSeriesRenderer ASeriesRenderer = new XYSeriesRenderer();
         //ASeriesRenderer.setColor(Color.BLACK);
@@ -94,7 +96,7 @@ public class ChartActivity extends AppCompatActivity {
 
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
-        multiRenderer.setChartTitle("LightSource Raw Spectrum");
+        multiRenderer.setChartTitle("Calibration Light Raw Spectrum");
         multiRenderer.setChartTitleTextSize(50);
         multiRenderer.setXTitle("wavelength (nm)");// X Title
         //multiRenderer.setYTitle("Energy");// Y Title
@@ -118,8 +120,8 @@ public class ChartActivity extends AppCompatActivity {
         //}
 
         multiRenderer.addSeriesRenderer(RSeriesRenderer);
-        multiRenderer.addSeriesRenderer(GSeriesRenderer);
-        multiRenderer.addSeriesRenderer(BSeriesRenderer);
+        //multiRenderer.addSeriesRenderer(GSeriesRenderer);
+        //multiRenderer.addSeriesRenderer(BSeriesRenderer);
         //multiRenderer.addSeriesRenderer(ASeriesRenderer);
 
         View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
@@ -127,3 +129,4 @@ public class ChartActivity extends AppCompatActivity {
         return mChart;
     }
 }
+
