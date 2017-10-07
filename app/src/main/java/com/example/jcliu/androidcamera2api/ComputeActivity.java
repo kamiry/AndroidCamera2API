@@ -19,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,9 +33,18 @@ public class ComputeActivity extends AppCompatActivity {
     protected static final int PROGRESS = 0x10000, PROGRESS2 = 0x10001, PROGRESS3 = 0x10002, PROGRESS4 = 0x10003;
     private ImageView iv;
     private Bitmap bitmap = null;
-    public static double[] lightsourceH, lightsourceV1, lightsourceV2, lightsourceV3;
+    // public stored 1-D spectrum
+    public static double[] lightsourceH;//, lightsourceV1, lightsourceV2, lightsourceV3;
+    public static double[][][] signalSource; // class: White, Air, Water, 3 parts: Left, Center, Right, 1-D pos
+
+    int sourceIdx = 0;
+    //
     int peakPos = 0, peakPosL, peakPosR, w, i1=0, i2=0;
+    // store the segmented region index
+    public static int x1_l, x1_r, x2_l, x2_r, x3_l, x3_r;
+    //
     private ProgressBar pbar;
+    private String[] classname = {"Light", "Air", "Water"};
 
     // option menu
     @Override
@@ -50,9 +60,13 @@ public class ComputeActivity extends AppCompatActivity {
             case R.id.spectrum_option:
                 Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                 Log.d(TAG, "option spectrum");
-                it.putExtra("lightsource1", lightsourceV1);
-                it.putExtra("lightsource2", lightsourceV2);
-                it.putExtra("lightsource3", lightsourceV3);
+                it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
+                it.putExtra("lightsource1", signalSource[sourceIdx][1]);
+                it.putExtra("signal name 1", " Center ");
+                it.putExtra("lightsource2", signalSource[sourceIdx][2]);
+                it.putExtra("signal name 2", " Right ");
+                it.putExtra("lightsource3", signalSource[sourceIdx][0]);
+                it.putExtra("signal name 3", " Left ");
                 startActivity(it);
                 break;
         }
@@ -66,11 +80,23 @@ public class ComputeActivity extends AppCompatActivity {
         iv = (ImageView) findViewById(R.id.imageView);
         pbar = (ProgressBar) findViewById(R.id.progressBar) ;
         //
+        if(signalSource == null){
+            Log.d("TAG", "initialize 3-D signal source");
+            Toast.makeText(ComputeActivity.this, "initialize 3-D signal source", Toast.LENGTH_SHORT).show();
+            signalSource = new double[3][][];
+            for(int i=0; i<3; i++){
+                signalSource[i] = new double[3][];
+            }
+        }
+        //
         Intent it = getIntent();
         String fname = it.getStringExtra("filename");
         Log.d(TAG, "Compute, filename =" + fname);
+        sourceIdx = it.getIntExtra("class", 0);
+        Log.d(TAG, "class =" + sourceIdx);
         //
-        fname = "WhiteISO500Exp10_1507187344233.jpg";
+        //fname = "WhiteISO500Exp10_1507187344233.jpg";
+        //fname = "WaterISO3000Exp100_1507187197782.jpg";
 
         File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -130,15 +156,13 @@ public class ComputeActivity extends AppCompatActivity {
                                     public void run() {
                                         pbar.setVisibility(View.GONE);
                                         Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
-                                        //it.putExtra("wavelength", wavelength);
-                                        it.putExtra("lightsource1", lightsourceV1);
-                                        it.putExtra("lightsource2", lightsourceV2);
-                                        it.putExtra("lightsource3", lightsourceV3);
-                                        //it.putExtra("darksource", darksource);
-                                        //it.putExtra("spectro", spectro);
-                                        //it.putExtra("SpectroR", spectroR);
-                                        //it.putExtra("SpectroG", spectroG);
-                                        //it.putExtra("SpectroB", spectroB);
+                                        it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
+                                        it.putExtra("lightsource1", signalSource[sourceIdx][1]);
+                                        it.putExtra("signal name 1", " Center ");
+                                        it.putExtra("lightsource2", signalSource[sourceIdx][2]);
+                                        it.putExtra("signal name 2", " Right ");
+                                        it.putExtra("lightsource3", signalSource[sourceIdx][0]);
+                                        it.putExtra("signal name 3", " Left ");
                                         startActivity(it);
                                     }
                                 }
@@ -156,13 +180,22 @@ public class ComputeActivity extends AppCompatActivity {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         Log.d(TAG, "image height=" + height + ", width="+ width);
-
+/*
         lightsourceH = null;
         lightsourceV1 = null; lightsourceV2 = null; lightsourceV3 = null;
         lightsourceH = new double[width]; // horizontal
         lightsourceV1 = new double[height]; // vertical
         lightsourceV2 = new double[height]; // vertical
         lightsourceV3 = new double[height]; // vertical
+*/
+        lightsourceH = null;
+        lightsourceH = new double[width]; // horizontal
+        if(signalSource[sourceIdx][0] == null) {
+            for (int i = 0; i < 3; i++) {
+                signalSource[sourceIdx][i] = new double[height];
+                Log.d(TAG, "initialize source array "+ i);
+            }
+        }
 
         // find peak index in center column
         for(int x=0; x<width; x++){
@@ -174,6 +207,7 @@ public class ComputeActivity extends AppCompatActivity {
                 accValue += value;
             }
             lightsourceH[x] = accValue;
+
             if(accValue > peak) {
                 peak = accValue;
                 peakPos = x;
@@ -190,7 +224,7 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "peak value="+peak+", pos="+peakPos+", min="+l_min);
 
         // two side lobes
-        double th = (l_min + (peak-l_min)*0.1353);
+        double th = (l_min + (peak-l_min)*0.453);
         for(int i=peakPos;i>=0;i--){
             if (lightsourceH[i] < th) {
                 i1 = i;
@@ -205,21 +239,22 @@ public class ComputeActivity extends AppCompatActivity {
         }
         w = 3*Math.max(peakPos-i1,i2-peakPos);
         Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
-        i1 = peakPos - Math.round(w/2);
-        i2 = peakPos + Math.round(w/2);
-        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
+        x2_l = peakPos - Math.round(w/2);
+        x2_r = peakPos + Math.round(w/2);
+        Log.d(TAG, "x2_l="+x2_l+", x2_r="+x2_r+", w="+w);
 
         // integral
         for(int y=0; y<height; y++){
             double accValue = 0;
-            for(int x=i1; x<=i2; x++){
+            for(int x=x2_l; x<=x2_r; x++){
                 int c = bitmap.getPixel(x, y);
                 double value = Color.red(c) + Color.green(c) + Color.blue(c);
                 //accValue += gray[y][x];
                 accValue += value;
             }
             //lightsourceV1[height-y-1] = accValue;
-            lightsourceV1[y] = accValue;
+            //lightsourceV1[y] = accValue;
+            signalSource[sourceIdx][1][y] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS2;
@@ -227,7 +262,7 @@ public class ComputeActivity extends AppCompatActivity {
             msg.arg2 = 1;
             mHandler.sendMessage(msg);
         }
-        Log.d(TAG,"lightsource1:" + lightsourceV1[0] + ", " + lightsourceV1[height/2]);
+        Log.d(TAG,"lightsource1:" + signalSource[sourceIdx][1][0]  + ", " + signalSource[sourceIdx][1][height/2]);
 
         // find peak in Right
         peak = 0; l_min=1e100;
@@ -249,19 +284,20 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "Right peak value="+peak+", pos="+peakPosR+", min="+l_min);
 
         // integral
-        i1 = peakPosR - Math.round(w/2);
-        i2 = peakPosR + Math.round(w/2);
-        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
+        x3_l = peakPosR - Math.round(w/2);
+        x3_r = peakPosR + Math.round(w/2);
+        Log.d(TAG, "x3_l="+x3_l +", x3_r="+x3_r+", w="+w);
         for(int y=0; y<height; y++){
             double accValue = 0;
-            for(int x=i1; x<=i2; x++){
+            for(int x=x3_l; x<=x3_r; x++){
                 int c = bitmap.getPixel(x, y);
                 double value = Color.red(c) + Color.green(c) + Color.blue(c);
                 //accValue += gray[y][x];
                 accValue += value;
             }
             //lightsourceV2[height-y-1] = accValue;
-            lightsourceV2[y] = accValue;
+            //lightsourceV2[y] = accValue;
+            signalSource[sourceIdx][2][y] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS2;
@@ -270,7 +306,7 @@ public class ComputeActivity extends AppCompatActivity {
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
         }
-        Log.d(TAG,"lightsource2:" + lightsourceV2[0] + ", " + lightsourceV2[height/2]);
+        Log.d(TAG,"lightsource2:" + signalSource[sourceIdx][2][0] + ", " + signalSource[sourceIdx][2][height/2]);
 
         // find peak in Left
         i1 = peakPos - Math.round(w/2);
@@ -293,19 +329,20 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "Left peak value="+peak+", pos="+peakPosL+", min="+l_min);
 
         // integral
-        i1 = peakPosL - Math.round(w/2);
-        i2 = peakPosL + Math.round(w/2);
-        Log.d(TAG, "i1="+i1+", i2="+i2+", w="+w);
+        x1_l = peakPosL - Math.round(w/2);
+        x1_r = peakPosL + Math.round(w/2);
+        Log.d(TAG, "x1_l="+x1_l+", x1_r="+x1_r+", w="+w);
         for(int y=0; y<height; y++){
             double accValue = 0;
-            for(int x=i1; x<=i2; x++){
+            for(int x=x1_l; x<=x1_r; x++){
                 int c = bitmap.getPixel(x, y);
                 double value = Color.red(c) + Color.green(c) + Color.blue(c);
                 //accValue += gray[y][x];
                 accValue += value;
             }
             //lightsourceV3[height-y-1] = accValue;
-            lightsourceV3[y] = accValue;
+            //lightsourceV3[y] = accValue;
+            signalSource[sourceIdx][0][y] = accValue;
 
             Message msg = new Message();
             msg.what = PROGRESS4;
@@ -314,7 +351,7 @@ public class ComputeActivity extends AppCompatActivity {
             //Log.v("progress", "y="+Integer.toString(y));
             mHandler.sendMessage(msg);
         }
-        Log.d(TAG,"lightsource3:" + lightsourceV3[0] + ", " + lightsourceV3[height/2]);
+        Log.d(TAG,"lightsource3:" + signalSource[sourceIdx][0][0] + ", " + signalSource[sourceIdx][0][height/2]);
     }
 
     private float progress_count=0;

@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
     String[] fname_options = {"Cal", "White", "Air", "Water"};
     private int photoOption=0;
     private String [] photoFilename = new String[4];
+    public static boolean segmented = false;
 
     // option menu
     @Override
@@ -129,21 +130,35 @@ public class MainActivity extends AppCompatActivity {
                                         startActivity(it);
                                         break;
                                     case 1: //whitelight
+                                        segmented = true;
                                         Intent it2 = new Intent(MainActivity.this, ComputeActivity.class);
-                                        it2.putExtra("filename", photoFilename[1]);
+                                        //it2.putExtra("filename", photoFilename[1]);
+                                        it2.putExtra("class", 0); //0: White light
+                                        it2.putExtra("filename", "WhiteISO500Exp10_1507187344233.jpg");
                                         startActivity(it2);
+                                        break;
+                                    case 2: //Air
+                                        Intent it3 = new Intent(MainActivity.this, ComputeActivity.class);
+                                        //it2.putExtra("filename", photoFilename[1]);
+                                        it3.putExtra("class", 1); //0: White light
+                                        it3.putExtra("filename", "WhiteISO500Exp10_1507187344233.jpg");
+                                        startActivity(it3);
                                         break;
                                 }
                             }
                         }).show();
                 break;
             case R.id.spectrum_view:
-                if(ComputeActivity.lightsourceV1 != null) {
-                    Intent it3 = new Intent(this, ChartActivity.class);
-                    it3.putExtra("lightsource1", ComputeActivity.lightsourceV1);
-                    it3.putExtra("lightsource2", ComputeActivity.lightsourceV2);
-                    it3.putExtra("lightsource3", ComputeActivity.lightsourceV3);
-                    startActivity(it3);
+                if(ComputeActivity.signalSource[0][0] != null) {
+                    Intent it5 = new Intent(this, ChartActivity.class);
+                    it5.putExtra("title", "LightSource Raw Spectrum");
+                    it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
+                    it5.putExtra("signal name 1", " Center ");
+                    it5.putExtra("lightsource2", ComputeActivity.signalSource[0][2]);
+                    it5.putExtra("signal name 2", " Right ");
+                    it5.putExtra("lightsource3", ComputeActivity.signalSource[0][0]);
+                    it5.putExtra("signal name 3", " Left ");
+                    startActivity(it5);
                 } else
                     Toast.makeText(MainActivity.this, "No lightsource spectrum", Toast.LENGTH_SHORT).show();
                 break;

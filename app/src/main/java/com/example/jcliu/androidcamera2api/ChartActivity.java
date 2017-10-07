@@ -19,6 +19,7 @@ public class ChartActivity extends AppCompatActivity {
 
     double[] spectroR, spectroG, spectroB, wavelength;
     private static final String TAG = "AndroidCamera2API";
+    protected String title, signalName1, signalName2, signalName3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,9 +28,13 @@ public class ChartActivity extends AppCompatActivity {
         LinearLayout chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
         Intent it = getIntent();
         //wavelength = it.getDoubleArrayExtra("wavelength");
+        title = it.getStringExtra("title");
         spectroR = it.getDoubleArrayExtra("lightsource1");
+        signalName1 = it.getStringExtra("signal name 1");
         spectroG = it.getDoubleArrayExtra("lightsource2");
+        signalName2 = it.getStringExtra("signal name 2");
         spectroB = it.getDoubleArrayExtra("lightsource3");
+        signalName3 = it.getStringExtra("signal name 3");
         //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
         Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
         Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
@@ -40,9 +45,9 @@ public class ChartActivity extends AppCompatActivity {
     }
 
     public View drawChart(){
-        XYSeries RSeries = new XYSeries(" Center ");
-        XYSeries GSeries = new XYSeries(" Right ");
-        XYSeries BSeries = new XYSeries(" Left ");
+        XYSeries RSeries = new XYSeries(signalName1);
+        XYSeries GSeries = new XYSeries(signalName2);
+        XYSeries BSeries = new XYSeries(signalName3);
         //XYSeries ASeries = new XYSeries(" all ");
         //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         if(CalActivity.wavelength == null) {
@@ -94,7 +99,7 @@ public class ChartActivity extends AppCompatActivity {
 
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
-        multiRenderer.setChartTitle("LightSource Raw Spectrum");
+        multiRenderer.setChartTitle(title);
         multiRenderer.setChartTitleTextSize(50);
         multiRenderer.setXTitle("wavelength (nm)");// X Title
         //multiRenderer.setYTitle("Energy");// Y Title
