@@ -49,9 +49,15 @@ public class CalActivity extends AppCompatActivity {
         switch (id){
             case R.id.spectrum_option:
                 Log.d(TAG, "option spectrum:" + calsource[0] + ", " + calsource[1000]);
-                Intent it = new Intent(CalActivity.this, CalChartActivity.class);
+                //Intent it = new Intent(CalActivity.this, CalChartActivity.class);
                 //it.putExtra("wavelength", wavelength);
-                it.putExtra("calsource", calsource);
+                //it.putExtra("calsource", calsource);
+                //startActivity(it);
+                Intent it = new Intent(CalActivity.this, ChartActivity.class);
+                it.putExtra("title", "Calibration Light Raw Spectrum");
+                it.putExtra("numChart", 1);
+                it.putExtra("lightsource1", calsource);
+                it.putExtra("signal name 1", " Calibration light ");
                 startActivity(it);
                 break;
         }
@@ -70,7 +76,6 @@ public class CalActivity extends AppCompatActivity {
         Log.d(TAG, "Compute, filename =" + fname);
         //
         //fname = "CalISO200Exp100_1507187696092.jpg";
-
         //File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
         File f = new File(fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -130,11 +135,13 @@ public class CalActivity extends AppCompatActivity {
                                     @Override
                                     public void run() {
                                         pbar.setVisibility(View.GONE);
-                                        Intent it = new Intent(CalActivity.this, CalChartActivity.class);
-                                        //it.putExtra("wavelength", wavelength);
-                                        it.putExtra("calsource", calsource);
-                                        //it.putExtra("lightsource2", lightsourceV2);
-                                        //it.putExtra("lightsource3", lightsourceV3);
+                                        //Intent it = new Intent(CalActivity.this, CalChartActivity.class);
+                                        //it.putExtra("calsource", calsource);
+                                        Intent it = new Intent(CalActivity.this, ChartActivity.class);
+                                        it.putExtra("title", "Calibration Light Raw Spectrum");
+                                        it.putExtra("numChart", 1);
+                                        it.putExtra("lightsource1", calsource);
+                                        it.putExtra("signal name 1", " Calibration light ");
                                         startActivity(it);
                                     }
                                 }
