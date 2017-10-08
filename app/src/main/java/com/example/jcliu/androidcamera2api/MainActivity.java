@@ -135,36 +135,6 @@ public class MainActivity extends AppCompatActivity {
                                 it.setType("image/*");
                                 startActivityForResult(it, i);
                                 Log.d(TAG, "selection over");
-                                /*
-                                switch(i){
-                                    case 0: //calibrate
-
-                                        Intent it2 = new Intent(MainActivity.this, CalActivity.class);
-                                        it2.putExtra("filename", filename);
-                                        startActivity(it2);
-                                        break;
-                                    case 1: //whitelight
-                                        it2 = new Intent(MainActivity.this, ComputeActivity.class);
-                                        //it2.putExtra("filename", photoFilename[1]);
-                                        it2.putExtra("class", 0); //0: White light
-                                        it2.putExtra("filename", "WhiteISO500Exp10_1507187344233.jpg");
-                                        startActivity(it2);
-                                        break;
-                                    case 2: //Air
-                                        Intent it3 = new Intent(MainActivity.this, ComputeActivity.class);
-                                        //it2.putExtra("filename", photoFilename[1]);
-                                        it3.putExtra("class", 1);
-                                        it3.putExtra("filename", "AirISO3000Exp100_1507187020307.jpg");
-                                        startActivity(it3);
-                                        break;
-                                    case 3: //Water
-                                        Intent it4 = new Intent(MainActivity.this, ComputeActivity.class);
-                                        //it2.putExtra("filename", photoFilename[1]);
-                                        it4.putExtra("class", 2);
-                                        it4.putExtra("filename", "WaterISO3000Exp100_1507187197782.jpg");
-                                        startActivity(it4);
-                                        break;
-                                }*/
                             }
                         }).show();
                 break;
@@ -203,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
                                     case 0: //Left sample
                                         Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
                                         it5.putExtra("title", "Left Sample Spectrum");
+                                        it5.putExtra("numChart", 3);
                                         it5.putExtra("lightsource1", ComputeActivity.signalSource[0][0]);
                                         it5.putExtra("signal name 1", " White Light ");
                                         it5.putExtra("lightsource2", ComputeActivity.signalSource[1][0]);
@@ -214,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
                                     case 1: //Central sample
                                         it5 = new Intent(MainActivity.this, ChartActivity.class);
                                         it5.putExtra("title", "Central Sample Spectrum");
+                                        it5.putExtra("numChart", 3);
                                         it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
                                         it5.putExtra("signal name 1", " White Light ");
                                         it5.putExtra("lightsource2", ComputeActivity.signalSource[1][1]);
@@ -225,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                                     case 2: //Right sample
                                         it5 = new Intent(MainActivity.this, ChartActivity.class);
                                         it5.putExtra("title", "Right Sample Spectrum");
+                                        it5.putExtra("numChart", 3);
                                         it5.putExtra("lightsource1", ComputeActivity.signalSource[0][2]);
                                         it5.putExtra("signal name 1", " White Light ");
                                         it5.putExtra("lightsource2", ComputeActivity.signalSource[1][2]);
@@ -254,35 +227,24 @@ public class MainActivity extends AppCompatActivity {
             switch (requestCode) {
                 case 0: // calibrate
                     it = new Intent(MainActivity.this, CalActivity.class);
-                    //it.putExtra("filename", filename);
-                    //startActivity(it);
                     break;
                 case 1: //whitelight
                     it = new Intent(MainActivity.this, ComputeActivity.class);
-                    //it2.putExtra("filename", photoFilename[1]);
                     it.putExtra("class", 0); //0: White light
-                    //it.putExtra("filename", filename);
-                    //startActivity(it);
                     break;
                 case 2: //Air
                     it = new Intent(MainActivity.this, ComputeActivity.class);
-                    //it2.putExtra("filename", photoFilename[1]);
                     it.putExtra("class", 1);
-                    //it.putExtra("filename", "AirISO3000Exp100_1507187020307.jpg");
-                    //startActivity(it3);
                     break;
                 case 3: //Water
                     it = new Intent(MainActivity.this, ComputeActivity.class);
-                    //it2.putExtra("filename", photoFilename[1]);
                     it.putExtra("class", 2);
-                    //it.putExtra("filename", "WaterISO3000Exp100_1507187197782.jpg");
-                    //startActivity(it);
                     break;
             }
             it.putExtra("filename", filename);
             startActivity(it);
         } else {
-            Toast.makeText(this, "圖庫失敗", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "放棄選圖", Toast.LENGTH_LONG).show();
         }
     }
 

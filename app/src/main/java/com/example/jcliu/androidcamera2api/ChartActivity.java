@@ -17,9 +17,12 @@ import org.achartengine.renderer.XYSeriesRenderer;
 
 public class ChartActivity extends AppCompatActivity {
 
-    double[] spectroR, spectroG, spectroB, wavelength;
     private static final String TAG = "AndroidCamera2API";
-    protected String title, signalName1, signalName2, signalName3;
+    protected String title;
+    protected int numChart;
+    String [] signalName = null;
+    double[][] spectrum = null;
+    int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,73 +32,37 @@ public class ChartActivity extends AppCompatActivity {
         Intent it = getIntent();
         //wavelength = it.getDoubleArrayExtra("wavelength");
         title = it.getStringExtra("title");
+        numChart = it.getIntExtra("numChart", 1);
+        Log.d(TAG, "title ="+title+", numChart="+numChart);
+        signalName = new String[numChart];
+        spectrum = new double[numChart][];
+
+        for(int i=1; i<numChart+1; i++){
+            signalName[i-1] = it.getStringExtra("signal name " + i);
+            Log.d(TAG, "signal name ="+signalName[i-1]);
+            spectrum[i-1] = it.getDoubleArrayExtra("lightsource" + i);
+            Log.d(TAG, "signal name ="+signalName[i-1]+", spectrum length="+spectrum[i-1].length);
+        }
+        /*
         spectroR = it.getDoubleArrayExtra("lightsource1");
         signalName1 = it.getStringExtra("signal name 1");
         spectroG = it.getDoubleArrayExtra("lightsource2");
         signalName2 = it.getStringExtra("signal name 2");
         spectroB = it.getDoubleArrayExtra("lightsource3");
         signalName3 = it.getStringExtra("signal name 3");
+        */
         //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
+        /*
         Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
         Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
         Log.d(TAG, "lightsource3:" + Double.toString(spectroB[0]) + ", "  + Double.toString(spectroB[1]));
+        */
         //og.d(TAG, "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
         View v = drawChart();
         chartContainer.addView(v, 0);
     }
 
     public View drawChart(){
-        XYSeries RSeries = new XYSeries(signalName1);
-        XYSeries GSeries = new XYSeries(signalName2);
-        XYSeries BSeries = new XYSeries(signalName3);
-        //XYSeries ASeries = new XYSeries(" all ");
-        //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
-        if(CalActivity.wavelength == null) {
-            for (int i = 0; i < spectroR.length; i++) {
-                RSeries.add(i, spectroR[i]);
-                GSeries.add(i, spectroG[i]);
-                BSeries.add(i, spectroB[i]);
-                //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
-            }
-        }
-        else{
-            for (int i = 0; i < spectroR.length; i++) {
-                RSeries.add(CalActivity.wavelength[i], spectroR[i]);
-                GSeries.add(CalActivity.wavelength[i], spectroG[i]);
-                BSeries.add(CalActivity.wavelength[i], spectroB[i]);
-                //ASeries.add(wavelength[i], spectroR[i]+spectroG[i]+spectroB[i]);
-            }
-        }
-        Log.d(TAG, "add ok");
-        // Creating a dataset to hold each series
-        XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
-        // Adding Income Series to the dataset
-        dataset.addSeries(RSeries);
-        dataset.addSeries(GSeries);
-        dataset.addSeries(BSeries);
-        //dataset.addSeries(ASeries);
-
-
-        // 線的描述
-        XYSeriesRenderer RSeriesRenderer = new XYSeriesRenderer();
-        RSeriesRenderer.setColor(Color.RED);
-        //xySeriesRenderer.setChartValuesTextSize(40);// Value Text Size
-        //RSeriesRenderer.setPointStyle(PointStyle.CIRCLE);
-        //RSeriesRenderer.setFillPoints(true);
-        RSeriesRenderer.setLineWidth(2);
-        //xySeriesRenderer.setDisplayChartValues(true);
-
-        XYSeriesRenderer GSeriesRenderer = new XYSeriesRenderer();
-        GSeriesRenderer.setColor(Color.GREEN);
-        GSeriesRenderer.setLineWidth(2);
-
-        XYSeriesRenderer BSeriesRenderer = new XYSeriesRenderer();
-        BSeriesRenderer.setColor(Color.BLUE);
-        BSeriesRenderer.setLineWidth(2);
-
-        //XYSeriesRenderer ASeriesRenderer = new XYSeriesRenderer();
-        //ASeriesRenderer.setColor(Color.BLACK);
-        //ASeriesRenderer.setLineWidth(2);
 
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
@@ -122,11 +89,38 @@ public class ChartActivity extends AppCompatActivity {
         //    multiRenderer.addXTextLabel(i+1, "" + list_Date.get(i).toString());
         //}
 
-        multiRenderer.addSeriesRenderer(RSeriesRenderer);
-        multiRenderer.addSeriesRenderer(GSeriesRenderer);
-        multiRenderer.addSeriesRenderer(BSeriesRenderer);
-        //multiRenderer.addSeriesRenderer(ASeriesRenderer);
+        // Creating a dataset to hold each series
+        XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 
+        XYSeries [] LSeries = new XYSeries[numChart];
+        XYSeriesRenderer [] LSeriesRenderer = new XYSeriesRenderer[numChart];
+
+        for(int i=0; i<numChart; i++) {
+            LSeries[i] = new XYSeries(signalName[i]);
+
+            //XYSeries ASeries = new XYSeries(" all ");
+            //Log.v("msg", "spectroB.length=" + spectroR.length + ", wavelength = " + wavelength.length);
+            if (CalActivity.wavelength == null) {
+                for (int j = 0; j < spectrum[i].length; j++) {
+                    LSeries[i].add(j, spectrum[i][j]);
+                }
+            } else {
+                for (int j = 0; j < spectrum[i].length; j++) {
+                    LSeries[i].add(CalActivity.wavelength[j], spectrum[i][j]);
+                }
+            }
+            Log.d(TAG, "add ok");
+
+            // Adding Income Series to the dataseti
+            dataset.addSeries(LSeries[i]);
+
+            // 線的描述
+            LSeriesRenderer[i] = new XYSeriesRenderer();
+            LSeriesRenderer[i].setLineWidth(2);
+            LSeriesRenderer[i].setColor(defColor[i]);
+
+            multiRenderer.addSeriesRenderer(LSeriesRenderer[i]);
+        }
         View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
 
         return mChart;

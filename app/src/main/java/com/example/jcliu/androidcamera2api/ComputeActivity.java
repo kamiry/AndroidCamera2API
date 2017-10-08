@@ -61,6 +61,7 @@ public class ComputeActivity extends AppCompatActivity {
                 Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                 Log.d(TAG, "option spectrum");
                 it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
+                it.putExtra("numChart", 3);
                 it.putExtra("lightsource1", signalSource[sourceIdx][1]);
                 it.putExtra("signal name 1", " Center ");
                 it.putExtra("lightsource2", signalSource[sourceIdx][2]);
@@ -159,6 +160,7 @@ public class ComputeActivity extends AppCompatActivity {
                                         pbar.setVisibility(View.GONE);
                                         Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                                         it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
+                                        it.putExtra("numChart", 3);
                                         it.putExtra("lightsource1", signalSource[sourceIdx][1]);
                                         it.putExtra("signal name 1", " Center ");
                                         it.putExtra("lightsource2", signalSource[sourceIdx][2]);
