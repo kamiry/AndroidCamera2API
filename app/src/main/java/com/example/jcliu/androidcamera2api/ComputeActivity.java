@@ -98,7 +98,8 @@ public class ComputeActivity extends AppCompatActivity {
         //fname = "WhiteISO500Exp10_1507187344233.jpg";
         //fname = "WaterISO3000Exp100_1507187197782.jpg";
 
-        File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+        //File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+        File f = new File(fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         try {

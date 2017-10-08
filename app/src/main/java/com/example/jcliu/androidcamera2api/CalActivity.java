@@ -69,9 +69,10 @@ public class CalActivity extends AppCompatActivity {
         String fname = it.getStringExtra("filename");
         Log.d(TAG, "Compute, filename =" + fname);
         //
-        fname = "CalISO200Exp100_1507187696092.jpg";
+        //fname = "CalISO200Exp100_1507187696092.jpg";
 
-        File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+        //File f = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+        File f = new File(fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         try {

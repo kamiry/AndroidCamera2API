@@ -1,10 +1,13 @@
 package com.example.jcliu.androidcamera2api;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
@@ -20,8 +23,12 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.HandlerThread;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -92,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private int photoOption=0;
     private String [] photoFilename = new String[4];
     public static boolean segmented = false;
+    String filename;
 
     // option menu
     @Override
@@ -123,14 +131,20 @@ public class MainActivity extends AppCompatActivity {
                         .setItems(R.array.photo_option, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
+                                Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                                it.setType("image/*");
+                                startActivityForResult(it, i);
+                                Log.d(TAG, "selection over");
+                                /*
                                 switch(i){
                                     case 0: //calibrate
-                                        Intent it = new Intent(MainActivity.this, CalActivity.class);
-                                        it.putExtra("filename", photoFilename[0]);
-                                        startActivity(it);
+
+                                        Intent it2 = new Intent(MainActivity.this, CalActivity.class);
+                                        it2.putExtra("filename", filename);
+                                        startActivity(it2);
                                         break;
                                     case 1: //whitelight
-                                        Intent it2 = new Intent(MainActivity.this, ComputeActivity.class);
+                                        it2 = new Intent(MainActivity.this, ComputeActivity.class);
                                         //it2.putExtra("filename", photoFilename[1]);
                                         it2.putExtra("class", 0); //0: White light
                                         it2.putExtra("filename", "WhiteISO500Exp10_1507187344233.jpg");
@@ -150,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                                         it4.putExtra("filename", "WaterISO3000Exp100_1507187197782.jpg");
                                         startActivity(it4);
                                         break;
-                                }
+                                }*/
                             }
                         }).show();
                 break;
@@ -225,6 +239,51 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            Uri imgUri;
+            imgUri = data.getData();
+            Log.d(TAG, "Gallery:" + imgUri.toString());
+            filename = getPath(this, imgUri);
+            Log.d(TAG, "Gallery:" + filename);
+            Intent it = null;
+            switch (requestCode) {
+                case 0: // calibrate
+                    it = new Intent(MainActivity.this, CalActivity.class);
+                    //it.putExtra("filename", filename);
+                    //startActivity(it);
+                    break;
+                case 1: //whitelight
+                    it = new Intent(MainActivity.this, ComputeActivity.class);
+                    //it2.putExtra("filename", photoFilename[1]);
+                    it.putExtra("class", 0); //0: White light
+                    //it.putExtra("filename", filename);
+                    //startActivity(it);
+                    break;
+                case 2: //Air
+                    it = new Intent(MainActivity.this, ComputeActivity.class);
+                    //it2.putExtra("filename", photoFilename[1]);
+                    it.putExtra("class", 1);
+                    //it.putExtra("filename", "AirISO3000Exp100_1507187020307.jpg");
+                    //startActivity(it3);
+                    break;
+                case 3: //Water
+                    it = new Intent(MainActivity.this, ComputeActivity.class);
+                    //it2.putExtra("filename", photoFilename[1]);
+                    it.putExtra("class", 2);
+                    //it.putExtra("filename", "WaterISO3000Exp100_1507187197782.jpg");
+                    //startActivity(it);
+                    break;
+            }
+            it.putExtra("filename", filename);
+            startActivity(it);
+        } else {
+            Toast.makeText(this, "圖庫失敗", Toast.LENGTH_LONG).show();
+        }
     }
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -598,5 +657,148 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+    // file path
+    /**
+     * Get a file path from a Uri. This will get the the path for Storage Access
+     * Framework Documents, as well as the _data field for the MediaStore and
+     * other file-based ContentProviders.
+     *
+     * @param context The context.
+     * @param uri     The Uri to query.
+     * @author paulburke
+     */
+    public static String getPath(final Context context, final Uri uri) {
+
+        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+
+        // DocumentProvider
+        if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+            // ExternalStorageProvider
+            if (isExternalStorageDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                if ("primary".equalsIgnoreCase(type)) {
+                    return Environment.getExternalStorageDirectory() + "/" + split[1];
+                }
+
+                // TODO handle non-primary volumes
+            }
+            // DownloadsProvider
+            else if (isDownloadsDocument(uri)) {
+
+                final String id = DocumentsContract.getDocumentId(uri);
+                final Uri contentUri = ContentUris.withAppendedId(
+                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+
+                return getDataColumn(context, contentUri, null, null);
+            }
+            // MediaProvider
+            else if (isMediaDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                Uri contentUri = null;
+                if ("image".equals(type)) {
+                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                } else if ("video".equals(type)) {
+                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                } else if ("audio".equals(type)) {
+                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                }
+
+                final String selection = "_id=?";
+                final String[] selectionArgs = new String[]{
+                        split[1]
+                };
+
+                return getDataColumn(context, contentUri, selection, selectionArgs);
+            }
+        }
+        // MediaStore (and general)
+        else if ("content".equalsIgnoreCase(uri.getScheme())) {
+
+            // Return the remote address
+            if (isGooglePhotosUri(uri))
+                return uri.getLastPathSegment();
+
+            return getDataColumn(context, uri, null, null);
+        }
+        // File
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the value of the data column for this Uri. This is useful for
+     * MediaStore Uris, and other file-based ContentProviders.
+     *
+     * @param context       The context.
+     * @param uri           The Uri to query.
+     * @param selection     (Optional) Filter used in the query.
+     * @param selectionArgs (Optional) Selection arguments used in the query.
+     * @return The value of the _data column, which is typically a file path.
+     */
+    public static String getDataColumn(Context context, Uri uri, String selection,
+                                       String[] selectionArgs) {
+
+        Cursor cursor = null;
+        final String column = "_data";
+        final String[] projection = {
+                column
+        };
+
+        try {
+            cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
+                    null);
+            if (cursor != null && cursor.moveToFirst()) {
+                final int index = cursor.getColumnIndexOrThrow(column);
+                return cursor.getString(index);
+            }
+        } finally {
+            if (cursor != null)
+                cursor.close();
+        }
+        return null;
+    }
+
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is ExternalStorageProvider.
+     */
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
+     */
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is Google Photos.
+     */
+    public static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
+    }
 
 }
