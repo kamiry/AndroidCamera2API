@@ -23,6 +23,7 @@ public class ChartActivity extends AppCompatActivity {
     String [] signalName = null;
     double[][] spectrum = null;
     int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN};
+    static int leftIdx=0, rightIdx=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,27 +44,27 @@ public class ChartActivity extends AppCompatActivity {
             spectrum[i-1] = it.getDoubleArrayExtra("lightsource" + i);
             Log.d(TAG, "signal name ="+signalName[i-1]+", spectrum length="+spectrum[i-1].length);
         }
-        /*
-        spectroR = it.getDoubleArrayExtra("lightsource1");
-        signalName1 = it.getStringExtra("signal name 1");
-        spectroG = it.getDoubleArrayExtra("lightsource2");
-        signalName2 = it.getStringExtra("signal name 2");
-        spectroB = it.getDoubleArrayExtra("lightsource3");
-        signalName3 = it.getStringExtra("signal name 3");
-        */
-        //Log.v("msg", "wavelength:" + Double.toString(wavelength[0]) + ", "  + Double.toString(wavelength[1]));
-        /*
-        Log.d(TAG, "lightsource1:" + Double.toString(spectroR[0]) + ", "  + Double.toString(spectroR[1]));
-        Log.d(TAG, "lightsource2:" + Double.toString(spectroG[0]) + ", "  + Double.toString(spectroG[1]));
-        Log.d(TAG, "lightsource3:" + Double.toString(spectroB[0]) + ", "  + Double.toString(spectroB[1]));
-        */
-        //og.d(TAG, "spectroR.length=" + spectroR.length + ", wavelength = " + wavelength.length);
+
         View v = drawChart();
         chartContainer.addView(v, 0);
     }
 
     public View drawChart(){
 
+        if (CalActivity.wavelength != null && leftIdx==0) {
+            for(int i=0; i<CalActivity.wavelength.length; i++){
+                if(CalActivity.wavelength[i] > 400){
+                    leftIdx = i;
+                    break;
+                }
+            }
+            for(int i=CalActivity.wavelength.length-1; i>0; i--){
+                if(CalActivity.wavelength[i] < 680){
+                    rightIdx = i;
+                    break;
+                }
+            }
+        }
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
         multiRenderer.setChartTitle(title);
@@ -105,7 +106,7 @@ public class ChartActivity extends AppCompatActivity {
                     LSeries[i].add(j, spectrum[i][j]);
                 }
             } else {
-                for (int j = 0; j < spectrum[i].length; j++) {
+                for (int j = leftIdx; j < rightIdx; j++) {
                     LSeries[i].add(CalActivity.wavelength[j], spectrum[i][j]);
                 }
             }

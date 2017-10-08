@@ -84,8 +84,8 @@ public class ComputeActivity extends AppCompatActivity {
         if(signalSource == null){
             Log.d("TAG", "initialize 3-D signal source");
             //Toast.makeText(ComputeActivity.this, "initialize 3-D signal source", Toast.LENGTH_SHORT).show();
-            signalSource = new double[3][][];
-            for(int i=0; i<3; i++){
+            signalSource = new double[5][][];
+            for(int i=0; i<5; i++){
                 signalSource[i] = new double[3][];
             }
         }
