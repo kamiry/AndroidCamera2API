@@ -43,6 +43,7 @@ import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Surface;
@@ -61,9 +62,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 
@@ -98,11 +101,11 @@ public class MainActivity extends AppCompatActivity {
     int ISOmin, ISOmax;
     static boolean AFmode = true;
     private TextView ISOTextView, ExpTextView;
-    private float minFocusD;
+    static float minFocusD;
     static float focusDist = -1;
     private SeekBar focusSeekBar;
     String fname_prefix="White";
-    String[] fname_options = {"Cal", "White", "Air", "Water"};
+    String[] fname_options = {"CAL", "WHITE", "AIR", "WATER"};
     static int photoOption=0;
     private String [] photoFilename = new String[4];
     public static boolean segmented = false;
@@ -122,15 +125,15 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id){
             case R.id.photo_option:
-                Log.d(TAG, "option 1");
+                Log.d(TAG, "拍攝標的");
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle(R.string.photo_object)
                         .setItems(R.array.photo_option, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                fname_prefix = fname_options[i];
+                                //fname_prefix = fname_options[i];
                                 photoOption = i;
-                                Log.d(TAG, "photo option:"+fname_prefix);
+                                Log.d(TAG, "photo option:"+fname_options[photoOption]);
                             }
                         }).show();
                 break;
@@ -281,13 +284,38 @@ public class MainActivity extends AppCompatActivity {
                 builder3.show();
                 break;
             case R.id.delay_shot:
+                builder3 = new AlertDialog.Builder(MainActivity.this);
+
+                builder3.setTitle(R.string.delay_time);
+                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                View mView = inflater.inflate(R.layout.dialog_delaytime, null);
+                final EditText editTextMin = (EditText) mView.findViewById(R.id.delay_min);
+                builder3.setView(mView);
+                builder3.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        Log.d(TAG, "Delay min=" + editTextMin.getText().toString());
+                        Calendar cal = Calendar.getInstance();
+                        // 設定於 ??? 後執行
+                        cal.add(Calendar.MINUTE, Integer.parseInt(editTextMin.getText().toString()));
+                        Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
+                        PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
+                        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                    }
+                });
+                builder3.show();
+
+                /*
                 Calendar cal = Calendar.getInstance();
                 // 設定於 ??? 後執行
-                cal.add(Calendar.SECOND, 10);
+                cal.add(Calendar.MINUTE, 1);
                 Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
                 PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
                 AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                am.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                */
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -330,6 +358,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d(TAG, "onCreate");
 
         textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
@@ -348,6 +377,11 @@ public class MainActivity extends AppCompatActivity {
         ExpTextView = (TextView) findViewById(R.id.textView2);
         // seekBar
         focusSeekBar = (SeekBar) findViewById(R.id.focusSeekBar);
+        // initial seekbar
+        if(focusDist != -1){
+            int pos = (int)(100-(focusDist/minFocusD)*100);
+            focusSeekBar.setProgress(pos);
+        }
         focusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -365,12 +399,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
             }
         });
         //
@@ -384,6 +416,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         AFoffBtn = (Button) findViewById(R.id.btn_AFOff);
+        if(AFmode)
+            AFoffBtn.setText("AF on");
+        else
+            AFoffBtn.setText("AF off");
         AFoffBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -452,23 +488,31 @@ public class MainActivity extends AppCompatActivity {
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
-            Log.d(TAG, "onOpened");
+
             myCameraDevice = cameraDevice;
-            Log.d(TAG, "Delay shot");
-            if(bundle != null){
-                Boolean returnFromReceiver = bundle.getBoolean("Delay_shot");
-                int delayShotID = bundle.getInt("Delay_shot_ID");
-                Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
-                Log.d(TAG, "Shot ID="+delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
+            //
+            Log.d(TAG, "stateCallback.onOpened()");
+            //createCameraPreview();
+            //
+
+            if(ShotReceiver.Delay_shot == true){
+                Log.d(TAG, "Delay shot");
+                //oolean returnFromReceiver = bundle.getBoolean("Delay_shot");
+                //int delayShotID = bundle.getInt("Delay_shot_ID");
+                //Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
+                Log.d(TAG, "Shot ID="+ShotReceiver.delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
                 //takePictureBtn.callOnClick();
-                if(delayShotID > delayShotNum) {
-                    delayShotNum = delayShotID;
+                if(ShotReceiver.delayShotID > delayShotNum) {
+                    delayShotNum = ShotReceiver.delayShotID;
                     takePicture();
+                } else{
+                    createCameraPreview();
                 }
-            } else
+            } else{
                 Log.d(TAG, "Null bundle");
-            Log.d(TAG, "stateCallback.onOpened(): call createCameraPreview");
-            createCameraPreview();
+                createCameraPreview();
+            }
+
         }
 
         @Override
@@ -580,10 +624,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void startBackgroundThread(){
-        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread = new HandlerThread("Start Camera Background");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-
     }
 
     protected void stopBackgroundThread(){
@@ -600,8 +643,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.e(TAG, "onResume");
+        Log.d(TAG, "onResume");
 
+        // 間隔拍攝
+        //Intent it = this.getIntent();
+        //bundle = it.getExtras();
+        //
         if(textureView.isAvailable()){
             Log.d(TAG, "on Resume: open camera");
             openCamera();
@@ -609,18 +656,26 @@ public class MainActivity extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
             Log.d(TAG, "on Resume: texture");
         }
-        // 間隔拍攝
-        Intent it = this.getIntent();
-        bundle = it.getExtras();
-        //
         startBackgroundThread();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.e(TAG, "onPause");
+        Log.d(TAG, "onPause");
+        //
+        ShotReceiver.Delay_shot = false;
+        //
         stopBackgroundThread();
+        //
+        /*
+        if(cameraCaptureSessions !=null) {
+            try {
+                cameraCaptureSessions.stopRepeating();
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }*/
     }
 
     protected void takePicture(){
@@ -636,6 +691,7 @@ public class MainActivity extends AppCompatActivity {
             Size [] jpegSizes = null;
             if (characteristics != null){
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                Log.d(TAG, "takePicture(): camera char ok");
             }
             int width = 640; //initial values
             int height = 480;
@@ -651,7 +707,15 @@ public class MainActivity extends AppCompatActivity {
             captureBuilder.addTarget(reader.getSurface());
             //captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             //captureBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
-            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            Log.d(TAG, "takePicture(): AFmode="+AFmode);
+            if(AFmode)
+                captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            else {
+                Log.d(TAG, "takePicture(): focusDist = "+focusDist);
+                captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+                captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focusDist);
+            }
+            //captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
             //captureBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, 0);
             //captureBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
@@ -661,9 +725,13 @@ public class MainActivity extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation)); // orientation not consistent?
             // file name
-            String prefix = fname_prefix + "ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
-            String fname = prefix+".jpg";
+            fname_prefix = fname_options[photoOption];
+            //String prefix = fname_prefix + "ISO" + ISOvalue + "Exp" + (expTime/1000000) + "_" + System.currentTimeMillis();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmss");
+            String prefix = fname_prefix + dateFormat.format(new Date())+"_ISO" + ISOvalue + "Exp" + (expTime/1000000);
+            final String fname = prefix+".jpg";
             photoFilename[photoOption] = fname; // record for calculating spectrum
+            Log.d(TAG, "takePicture(): filename -" + fname);
             final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
@@ -671,6 +739,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onImageAvailable(ImageReader imageReader) {
                     Image image = null;
                     try {
+                        Log.d(TAG, "takePicture(): onImageAvailable");
                         image = imageReader.acquireLatestImage();
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.capacity()];
@@ -690,6 +759,7 @@ public class MainActivity extends AppCompatActivity {
                     try{
                         output = new FileOutputStream(file);
                         output.write(bytes);
+                        Log.d(TAG, "takePicture(): save ok - " +fname);
                     } finally {
                         if(null != output)
                             output.close();
@@ -702,6 +772,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
                     double mExposureTime = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+                    Log.d(TAG, "takePicture(): onCaptureCompleted");
                     Toast.makeText(MainActivity.this, "saved:"+file+"\n"+mExposureTime/1e9+" sec", Toast.LENGTH_SHORT).show();
                     createCameraPreview();
                 }
@@ -711,7 +782,9 @@ public class MainActivity extends AppCompatActivity {
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
                     try{
                         // important!!!
+                        Log.d(TAG, "takePicture(): createCaptureSession.onConfigured");
                         cameraCaptureSession.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                        Log.d(TAG, "takePicture(): call capture");
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -723,6 +796,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, mBackgroundHandler);
         } catch (CameraAccessException e) {
+            Log.d(TAG, "takePicture(), camera exception");
             e.printStackTrace();
         }
 
