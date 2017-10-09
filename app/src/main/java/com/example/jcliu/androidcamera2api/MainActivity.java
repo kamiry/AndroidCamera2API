@@ -2,6 +2,8 @@ package com.example.jcliu.androidcamera2api;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -61,6 +63,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 
@@ -77,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     protected CameraCaptureSession cameraCaptureSessions;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
+    Bundle bundle = null;
     //
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
@@ -88,19 +92,23 @@ public class MainActivity extends AppCompatActivity {
     // view-related
     private EditText ISOText;
     private EditText expTimeText;
-    Long expTime, expTimeMax, expTimeMin;
-    int ISOvalue, ISOmin, ISOmax;
-    private boolean AFmode = true;
+    static Long expTime = Long.valueOf(0);
+    Long expTimeMax, expTimeMin;
+    static int ISOvalue = -1;
+    int ISOmin, ISOmax;
+    static boolean AFmode = true;
     private TextView ISOTextView, ExpTextView;
-    private float minFocusD, focusDist;
+    private float minFocusD;
+    static float focusDist = -1;
     private SeekBar focusSeekBar;
     String fname_prefix="White";
     String[] fname_options = {"Cal", "White", "Air", "Water"};
-    private int photoOption=0;
+    static int photoOption=0;
     private String [] photoFilename = new String[4];
     public static boolean segmented = false;
     String filename;
     protected static int spectrum_choice=0;
+    static int delayShotNum = 0;
 
     // option menu
     @Override
@@ -272,6 +280,15 @@ public class MainActivity extends AppCompatActivity {
                 });
                 builder3.show();
                 break;
+            case R.id.delay_shot:
+                Calendar cal = Calendar.getInstance();
+                // 設定於 ??? 後執行
+                cal.add(Calendar.SECOND, 10);
+                Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
+                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
+                AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                am.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -313,14 +330,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //
+
         textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
         ISOText = (EditText) findViewById(R.id.editText);
-        ISOvalue = Integer.parseInt(ISOText.getHint().toString());
+        if(ISOvalue == -1) // initail value only
+            ISOvalue = Integer.parseInt(ISOText.getHint().toString());
+        else
+            ISOText.setText(String.valueOf(ISOvalue));
         expTimeText = (EditText) findViewById(R.id.editText2);
-        expTime = Long.parseLong(expTimeText.getHint().toString())*1000000;
+        if(expTime == 0)
+            expTime = Long.parseLong(expTimeText.getHint().toString())*1000000;
+        else
+            expTimeText.setText(String.valueOf((float)expTime/1000000));
         ISOTextView = (TextView) findViewById(R.id.textView);
         ExpTextView = (TextView) findViewById(R.id.textView2);
         // seekBar
@@ -356,6 +379,7 @@ public class MainActivity extends AppCompatActivity {
         takePictureBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "take picture button");
                 takePicture();
             }
         });
@@ -400,6 +424,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -429,7 +454,20 @@ public class MainActivity extends AppCompatActivity {
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             Log.d(TAG, "onOpened");
             myCameraDevice = cameraDevice;
-            Log.d(TAG, "call createCameraPreview");
+            Log.d(TAG, "Delay shot");
+            if(bundle != null){
+                Boolean returnFromReceiver = bundle.getBoolean("Delay_shot");
+                int delayShotID = bundle.getInt("Delay_shot_ID");
+                Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
+                Log.d(TAG, "Shot ID="+delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
+                //takePictureBtn.callOnClick();
+                if(delayShotID > delayShotNum) {
+                    delayShotNum = delayShotID;
+                    takePicture();
+                }
+            } else
+                Log.d(TAG, "Null bundle");
+            Log.d(TAG, "stateCallback.onOpened(): call createCameraPreview");
             createCameraPreview();
         }
 
@@ -447,7 +485,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera(){
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        Log.d(TAG, "is camera open?");
+        Log.d(TAG, "openCamera(): is camera open?");
         try{
             cameraId = manager.getCameraIdList() [0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
@@ -563,12 +601,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.e(TAG, "onResume");
-        startBackgroundThread();
+
         if(textureView.isAvailable()){
+            Log.d(TAG, "on Resume: open camera");
             openCamera();
         } else {
             textureView.setSurfaceTextureListener(textureListener);
+            Log.d(TAG, "on Resume: texture");
         }
+        // 間隔拍攝
+        Intent it = this.getIntent();
+        bundle = it.getExtras();
+        //
+        startBackgroundThread();
     }
 
     @Override
@@ -580,9 +625,11 @@ public class MainActivity extends AppCompatActivity {
 
     protected void takePicture(){
         if (null == myCameraDevice) {
-            Log.e(TAG, "camera device is null");
+            Log.d(TAG, "takePicture(): camera device is null");
             return;
         }
+        else
+            Log.d(TAG, "takePicture() started");
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(myCameraDevice.getId()); // cameraId ???

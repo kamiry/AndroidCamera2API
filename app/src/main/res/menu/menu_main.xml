@@ -13,4 +13,8 @@
         android:title="樣品光譜"
         app:showAsAction="never"
         />
+    <item android:id="@+id/delay_shot"
+        android:title="間隔拍攝"
+        app:showAsAction="never"
+        />
 </menu>

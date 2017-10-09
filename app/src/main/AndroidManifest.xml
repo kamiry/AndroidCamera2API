@@ -4,7 +4,6 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
     <uses-feature android:name="android.hardware.camera2.full" />
 
     <application
@@ -17,14 +16,14 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".ComputeActivity" />
         <activity android:name=".ChartActivity" />
         <activity android:name=".CalActivity" />
-        <activity android:name=".CalChartActivity"></activity>
+        <receiver android:name=".ShotReceiver">
+        </receiver>
     </application>
 
 </manifest>
