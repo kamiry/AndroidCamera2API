@@ -298,15 +298,15 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         int count, hr, min;
-                        if(editTextCnt.getText() != null){
+                        if(!editTextCnt.getText().toString().trim().equals("")){
                             count = Integer.parseInt(editTextCnt.getText().toString());
                         } else
                             count = 0;
-                        if(editTextHr.getText() != null){
+                        if(!editTextHr.getText().toString().trim().equals("")){
                             hr = Integer.parseInt(editTextHr.getText().toString());
                         } else
                             hr = 0;
-                        if(editTextMin.getText() != null){
+                        if(!editTextMin.getText().toString().trim().equals("")){
                             min = Integer.parseInt(editTextMin.getText().toString());
                         } else
                             min = 0;
