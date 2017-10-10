@@ -289,20 +289,39 @@ public class MainActivity extends AppCompatActivity {
                 builder3.setTitle(R.string.delay_time);
                 LayoutInflater inflater = MainActivity.this.getLayoutInflater();
                 View mView = inflater.inflate(R.layout.dialog_delaytime, null);
+                final EditText editTextCnt = (EditText) mView.findViewById(R.id.delay_count);
+                final EditText editTextHr = (EditText) mView.findViewById(R.id.delay_hr);
                 final EditText editTextMin = (EditText) mView.findViewById(R.id.delay_min);
+
                 builder3.setView(mView);
                 builder3.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
-                        Log.d(TAG, "Delay min=" + editTextMin.getText().toString());
-                        Calendar cal = Calendar.getInstance();
-                        // 設定於 ??? 後執行
-                        cal.add(Calendar.MINUTE, Integer.parseInt(editTextMin.getText().toString()));
-                        Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
-                        PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
-                        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                        int count, hr, min;
+                        if(editTextCnt.getText() != null){
+                            count = Integer.parseInt(editTextCnt.getText().toString());
+                        } else
+                            count = 0;
+                        if(editTextHr.getText() != null){
+                            hr = Integer.parseInt(editTextHr.getText().toString());
+                        } else
+                            hr = 0;
+                        if(editTextMin.getText() != null){
+                            min = Integer.parseInt(editTextMin.getText().toString());
+                        } else
+                            min = 0;
+                        Log.d(TAG, "Delay count =" + count + ", hr = " + hr + ", min=" + min);
+                        for(int j=0; j<count; j++) {
+                            Calendar cal = Calendar.getInstance();
+                            // 設定於 ??? 後執行
+                            cal.add(Calendar.HOUR, hr*(j+1));
+                            cal.add(Calendar.MINUTE, min*(j+1));
+                            Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
+                            intent.addCategory("D" + j);
+                            PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
+                            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+                        }
                     }
                 });
                 builder3.show();
