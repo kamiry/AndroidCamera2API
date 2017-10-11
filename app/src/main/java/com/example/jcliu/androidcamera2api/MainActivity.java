@@ -349,6 +349,12 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Gallery:" + imgUri.toString());
             filename = getPath(this, imgUri);
             Log.d(TAG, "Gallery:" + filename);
+            try {
+                cameraCaptureSessions.stopRepeating();
+                //updatePreview();
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
             Intent it = null;
             switch (requestCode) {
                 case 0: // calibrate

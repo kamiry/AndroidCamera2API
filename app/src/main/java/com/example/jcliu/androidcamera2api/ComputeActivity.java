@@ -109,8 +109,24 @@ public class ComputeActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         showImg();
-        if(!MainActivity.segmented) Toast.makeText(ComputeActivity.this, "Perfrom sample segmentation", Toast.LENGTH_SHORT).show();
-        waveCalcThd();
+        // 重新計算分割?
+        AlertDialog.Builder builder = new AlertDialog.Builder(ComputeActivity.this);
+        builder.setTitle("Perform sample segmentation?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                MainActivity.segmented = false;
+                //lightsourceCalc();
+                waveCalcThd();
+            }
+        }).setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                MainActivity.segmented = true;
+                waveCalcThd();
+            }
+        }).show();
+        //if(!MainActivity.segmented) Toast.makeText(ComputeActivity.this, "Perfrom sample segmentation", Toast.LENGTH_SHORT).show();
+        //waveCalcThd();
     }
 
     void showImg() {
@@ -131,6 +147,31 @@ public class ComputeActivity extends AppCompatActivity {
             Matrix matrix = new Matrix();
             matrix.postRotate(90);
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+        iv.setImageBitmap(bitmap);
+    }
+
+    void showSegImg(){
+        int opaqueRed = 0xffff0000; // from a color int
+        for(int y=0; y<bitmap.getHeight(); y++){
+            bitmap.setPixel(x1_l-1, y, opaqueRed);
+            bitmap.setPixel(x1_l, y, opaqueRed);
+            bitmap.setPixel(x1_l+1, y, opaqueRed);
+            bitmap.setPixel(x1_r-1, y, opaqueRed);
+            bitmap.setPixel(x1_r, y, opaqueRed);
+            bitmap.setPixel(x1_r+1, y, opaqueRed);
+            bitmap.setPixel(x2_l-1, y, opaqueRed);
+            bitmap.setPixel(x2_l, y, opaqueRed);
+            bitmap.setPixel(x2_l+1, y, opaqueRed);
+            bitmap.setPixel(x2_r-1, y, opaqueRed);
+            bitmap.setPixel(x2_r, y, opaqueRed);
+            bitmap.setPixel(x2_r+1, y, opaqueRed);
+            bitmap.setPixel(x3_l-1, y, opaqueRed);
+            bitmap.setPixel(x3_l, y, opaqueRed);
+            bitmap.setPixel(x3_l+1, y, opaqueRed);
+            bitmap.setPixel(x3_r-1, y, opaqueRed);
+            bitmap.setPixel(x3_r, y, opaqueRed);
+            bitmap.setPixel(x3_r+1, y, opaqueRed);
         }
         iv.setImageBitmap(bitmap);
     }
@@ -158,6 +199,7 @@ public class ComputeActivity extends AppCompatActivity {
                                     @Override
                                     public void run() {
                                         pbar.setVisibility(View.GONE);
+                                        showSegImg();
                                         Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                                         it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
                                         it.putExtra("numChart", 3);
@@ -179,19 +221,13 @@ public class ComputeActivity extends AppCompatActivity {
 
     public void lightsourceCalc(){
 
-        double peak = 0, l_min=1e100;
+        double peak = 0, l_min=1e100, threshold = 0.75, w_ratio=1.5;
+        double th1, th2;
 
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         Log.d(TAG, "image height=" + height + ", width="+ width);
-/*
-        lightsourceH = null;
-        lightsourceV1 = null; lightsourceV2 = null; lightsourceV3 = null;
-        lightsourceH = new double[width]; // horizontal
-        lightsourceV1 = new double[height]; // vertical
-        lightsourceV2 = new double[height]; // vertical
-        lightsourceV3 = new double[height]; // vertical
-*/
+
         lightsourceH = null;
         lightsourceH = new double[width]; // horizontal
         if(signalSource[sourceIdx][0] == null) {
@@ -203,7 +239,7 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "segmented?" + MainActivity.segmented);
 
         if(!MainActivity.segmented) {
-            // find peak index in center column
+            // find max peak
             for (int x = 0; x < width; x++) {
                 double accValue = 0;
                 for (int y = 0; y < height; y++) {
@@ -226,149 +262,119 @@ public class ComputeActivity extends AppCompatActivity {
                 msg.arg2 = x;
                 //Log.v("progress", "y="+Integer.toString(y));
                 mHandler.sendMessage(msg);
+
             }
             Log.d(TAG, "peak value=" + peak + ", pos=" + peakPos + ", min=" + l_min);
+            th1 = threshold * peak;
+            th2 = (threshold-0.1) * peak;
 
-            // two side lobes
-            double th = (l_min + (peak - l_min) * 0.453);
-            for (int i = peakPos; i >= 0; i--) {
-                if (lightsourceH[i] < th) {
-                    i1 = i;
+            for (int x = 0; x < width; x++) {
+                if (lightsourceH[x] > th1) {
+                    x1_l = x;
                     break;
                 }
             }
-            for (int i = peakPos; i < width; i++) {
-                if (lightsourceH[i] < th) {
-                    i2 = i;
+            for (int x = x1_l; x < width; x++) {
+                if (lightsourceH[x] < th2) {
+                    x1_r = x;
                     break;
                 }
             }
-            w = 3 * Math.max(peakPos - i1, i2 - peakPos);
-            Log.d(TAG, "i1=" + i1 + ", i2=" + i2 + ", w=" + w);
-            x2_l = peakPos - Math.round(w / 2);
-            x2_r = peakPos + Math.round(w / 2);
-            Log.d(TAG, "x2_l=" + x2_l + ", x2_r=" + x2_r + ", w=" + w);
-        } else
-            progress_count=50;
-
-        // integral
-        for(int y=0; y<height; y++){
-            double accValue = 0;
-            for(int x=x2_l; x<=x2_r; x++){
-                int c = bitmap.getPixel(x, y);
-                double value = Color.red(c) + Color.green(c) + Color.blue(c);
-                //accValue += gray[y][x];
-                accValue += value;
-            }
-            //lightsourceV1[height-y-1] = accValue;
-            //lightsourceV1[y] = accValue;
-            signalSource[sourceIdx][1][y] = accValue;
-
-            Message msg = new Message();
-            msg.what = PROGRESS2;
-            msg.arg1 = height;
-            msg.arg2 = 1;
-            mHandler.sendMessage(msg);
-        }
-        Log.d(TAG,"lightsource1:" + signalSource[sourceIdx][1][0]  + ", " + signalSource[sourceIdx][1][height/2]);
-
-        // find peak in Right
-        if(!MainActivity.segmented) {
-            peak = 0;
-            l_min = 1e100;
-            for (int x = 0; x < 500; x++) {
-                double accValue = lightsourceH[i2 + x];
-                if (accValue > peak) {
-                    peak = accValue;
-                    peakPosR = i2 + x;
+            Log.d(TAG, "x1_l=" + x1_l + ", x1_r=" + x1_r);
+            for (int x = x1_r; x < width; x++) {
+                if (lightsourceH[x] > th1) {
+                    x2_l = x;
+                    break;
                 }
-                if (accValue < l_min) l_min = accValue;
+            }
+            for (int x = x2_l; x < width; x++) {
+                if (lightsourceH[x] < th2) {
+                    x2_r = x;
+                    break;
+                }
+            }
+            Log.d(TAG, "x2_l=" + x2_l + ", x2_r=" + x2_r + ", width=" + lightsourceH.length);
+
+            for (int x = x2_r; x < width; x++) {
+                //Log.d(TAG, "x="+x+", lightsourceH="+lightsourceH[x]);
+                if (lightsourceH[x] > th1) {
+                    //Log.d(TAG, "x3_l="+x);
+                    x3_l = x;
+                    break;
+                }
+            }
+
+            for (int x = x3_l; x < width; x++) {
+                if (lightsourceH[x] < th2) {
+                    x3_r = x;
+                    break;
+                }
+            }
+            Log.d(TAG, "x3_l=" + x3_l + ", x3_r=" + x3_r);
+
+            // integral
+            for (int y = 0; y < height; y++) {
+                double accValue = 0;
+                for (int x = x2_l; x <= x2_r; x++) {
+                    int c = bitmap.getPixel(x, y);
+                    double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                    //accValue += gray[y][x];
+                    accValue += value;
+                }
+                //lightsourceV1[height-y-1] = accValue;
+                //lightsourceV1[y] = accValue;
+                signalSource[sourceIdx][1][y] = accValue;
 
                 Message msg = new Message();
                 msg.what = PROGRESS2;
-                msg.arg1 = 500;
+                msg.arg1 = height;
+                msg.arg2 = 1;
+                mHandler.sendMessage(msg);
+            }
+            Log.d(TAG, "lightsource1:" + signalSource[sourceIdx][1][0] + ", " + signalSource[sourceIdx][1][height / 2]);
+
+            // integral
+            for (int y = 0; y < height; y++) {
+                double accValue = 0;
+                for (int x = x3_l; x <= x3_r; x++) {
+                    int c = bitmap.getPixel(x, y);
+                    double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                    //accValue += gray[y][x];
+                    accValue += value;
+                }
+                //lightsourceV2[height-y-1] = accValue;
+                //lightsourceV2[y] = accValue;
+                signalSource[sourceIdx][2][y] = accValue;
+
+                Message msg = new Message();
+                msg.what = PROGRESS2;
+                msg.arg1 = height;
                 msg.arg2 = 1;
                 //Log.v("progress", "y="+Integer.toString(y));
                 mHandler.sendMessage(msg);
             }
-            Log.d(TAG, "Right peak value=" + peak + ", pos=" + peakPosR + ", min=" + l_min);
 
-            // integral
-            x3_l = peakPosR - Math.round(w / 2);
-            x3_r = peakPosR + Math.round(w / 2);
-        }
-        Log.d(TAG, "x3_l="+x3_l +", x3_r="+x3_r+", w="+w);
-        for(int y=0; y<height; y++){
-            double accValue = 0;
-            for(int x=x3_l; x<=x3_r; x++){
-                int c = bitmap.getPixel(x, y);
-                double value = Color.red(c) + Color.green(c) + Color.blue(c);
-                //accValue += gray[y][x];
-                accValue += value;
-            }
-            //lightsourceV2[height-y-1] = accValue;
-            //lightsourceV2[y] = accValue;
-            signalSource[sourceIdx][2][y] = accValue;
-
-            Message msg = new Message();
-            msg.what = PROGRESS2;
-            msg.arg1 = height;
-            msg.arg2 = 1;
-            //Log.v("progress", "y="+Integer.toString(y));
-            mHandler.sendMessage(msg);
-        }
-        Log.d(TAG,"lightsource2:" + signalSource[sourceIdx][2][0] + ", " + signalSource[sourceIdx][2][height/2]);
-
-        if(!MainActivity.segmented) {
-            // find peak in Left
-            i1 = peakPos - Math.round(w / 2);
-            peak = 0;
-            l_min = 1e100;
-            for (int x = 0; x < 500; x++) {
-                double accValue = lightsourceH[i1 - x];
-                if (accValue > peak) {
-                    peak = accValue;
-                    peakPosL = i1 - x;
+            for (int y = 0; y < height; y++) {
+                double accValue = 0;
+                for (int x = x1_l; x <= x1_r; x++) {
+                    int c = bitmap.getPixel(x, y);
+                    double value = Color.red(c) + Color.green(c) + Color.blue(c);
+                    //accValue += gray[y][x];
+                    accValue += value;
                 }
-                if (accValue < l_min) l_min = accValue;
+                //lightsourceV3[height-y-1] = accValue;
+                //lightsourceV3[y] = accValue;
+                signalSource[sourceIdx][0][y] = accValue;
 
                 Message msg = new Message();
-                msg.what = PROGRESS2;
-                msg.arg1 = 500;
-                msg.arg2 = 1;
+                msg.what = PROGRESS4;
+                msg.arg1 = height;
+                msg.arg2 = y;
                 //Log.v("progress", "y="+Integer.toString(y));
                 mHandler.sendMessage(msg);
             }
-            Log.d(TAG, "Left peak value=" + peak + ", pos=" + peakPosL + ", min=" + l_min);
-
-            // integral
-            x1_l = peakPosL - Math.round(w / 2);
-            x1_r = peakPosL + Math.round(w / 2);
-
-            MainActivity.segmented = true;
+            Log.d(TAG, "lightsource3:" + signalSource[sourceIdx][0][0] + ", " + signalSource[sourceIdx][0][height / 2]);
         }
-
-        Log.d(TAG, "x1_l="+x1_l+", x1_r="+x1_r+", w="+w);
-        for(int y=0; y<height; y++){
-            double accValue = 0;
-            for(int x=x1_l; x<=x1_r; x++){
-                int c = bitmap.getPixel(x, y);
-                double value = Color.red(c) + Color.green(c) + Color.blue(c);
-                //accValue += gray[y][x];
-                accValue += value;
-            }
-            //lightsourceV3[height-y-1] = accValue;
-            //lightsourceV3[y] = accValue;
-            signalSource[sourceIdx][0][y] = accValue;
-
-            Message msg = new Message();
-            msg.what = PROGRESS4;
-            msg.arg1 = height;
-            msg.arg2 = y;
-            //Log.v("progress", "y="+Integer.toString(y));
-            mHandler.sendMessage(msg);
-        }
-        Log.d(TAG,"lightsource3:" + signalSource[sourceIdx][0][0] + ", " + signalSource[sourceIdx][0][height/2]);
     }
 
     private float progress_count=0;
@@ -379,7 +385,7 @@ public class ComputeActivity extends AppCompatActivity {
                 case PROGRESS:
                     int total = msg.arg1;
                     int current = msg.arg2;
-                    progress_count = (current*100/total)*5/10;
+                    progress_count = (current*100/total)*7/10;
                     pbar.setProgress((int)progress_count);
                     //Log.v("progress", "current:"+Integer.toString(current)+", now:"+Integer.toString(count));
                     break;
