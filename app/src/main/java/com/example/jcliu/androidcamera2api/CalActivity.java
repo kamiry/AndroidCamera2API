@@ -104,6 +104,7 @@ public class CalActivity extends AppCompatActivity {
         Log.d(TAG, "iw=" + iw + ",ih=" + ih);
 
         if (needRotate) {
+            Log.d(TAG, "rotate bmp");
             Matrix matrix = new Matrix();
             matrix.postRotate(90);
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
@@ -167,7 +168,7 @@ public class CalActivity extends AppCompatActivity {
         double R_max=0, G_max=0, B_max=0;
         int R_pos=0, G_pos=0, B_pos=0;
         //double[] nm = {436.6, 487.7, 546.5, 587.6, 611.6};
-        double[] nm = {460, 532, 590};
+        double[] nm = {466.69, 548.45, 636.82};
         Log.d(TAG, "enter loop");
         for(int y=0; y< height; y++){
             double accValue = 0,  accValue_R=0, accValue_G=0, accValue_B=0;
@@ -178,7 +179,10 @@ public class CalActivity extends AppCompatActivity {
                 accValue_R += Color.red(c);
                 accValue_G += Color.green(c);
                 accValue_B += Color.blue(c);
-                //Log.d(TAG, "x=" + x + ", y=" + y + ", accValue=" + accValue);
+                //if(y==0) {
+                //    Log.d(TAG, "x=" + x + ", y=" + y + ", accValue=" + accValue);
+                //    Log.d(TAG, Color.red(c) + " " + Color.green(c) + " " + Color.blue(c) + " ");
+                //}
             }
             calsource[y] = accValue;
             //Log.d(TAG, "y=" + y + ", accValue" + calsource[y]);

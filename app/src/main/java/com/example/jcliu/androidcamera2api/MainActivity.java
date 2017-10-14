@@ -437,7 +437,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "take picture button");
-                takePicture();
+                Log.d(TAG, "拍攝標的");
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(R.string.photo_object)
+                        .setItems(R.array.photo_option, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                photoOption = i;
+                                Log.d(TAG, "photo option:"+fname_options[photoOption]);
+                                takePicture();
+                            }
+                        })
+                        .show();
             }
         });
         AFoffBtn = (Button) findViewById(R.id.btn_AFOff);
@@ -799,7 +810,28 @@ public class MainActivity extends AppCompatActivity {
                     double mExposureTime = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
                     Log.d(TAG, "takePicture(): onCaptureCompleted");
                     Toast.makeText(MainActivity.this, "saved:"+file+"\n"+mExposureTime/1e9+" sec", Toast.LENGTH_SHORT).show();
-                    createCameraPreview();
+                    // 拍照後直接計算
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Perform spectrum computation?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Intent it = null;
+                            if(photoOption ==0){
+                                it = new Intent(MainActivity.this, CalActivity.class);
+                            } else {
+                                it = new Intent(MainActivity.this, ComputeActivity.class);
+                                it.putExtra("class", photoOption-1);
+                            }
+                            it.putExtra("filename", Environment.getExternalStorageDirectory()+"/"+fname);
+                            startActivity(it);
+                        }
+                    }).setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            MainActivity.segmented = true;
+                            createCameraPreview();
+                        }
+                    }).show();
                 }
             };
             myCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback(){
