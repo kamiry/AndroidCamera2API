@@ -113,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     protected static int spectrum_choice=0;
     static int delayShotNum = 0;
     boolean returnFromReceiver;
+    String fullDirName;
 
     // option menu
     @Override
@@ -391,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.d(TAG, "onCreate");
+        fullDirName = createStorageDir("SpectroMeterPro");
 
         textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
@@ -777,7 +779,8 @@ public class MainActivity extends AppCompatActivity {
             final String fname = prefix+".jpg";
             photoFilename[photoOption] = fname; // record for calculating spectrum
             Log.d(TAG, "takePicture(): filename -" + fname);
-            final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+            //final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
+            final File file = new File(fullDirName+"/"+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
                 @Override
@@ -832,7 +835,8 @@ public class MainActivity extends AppCompatActivity {
                                     it = new Intent(MainActivity.this, ComputeActivity.class);
                                     it.putExtra("class", photoOption - 1);
                                 }
-                                it.putExtra("filename", Environment.getExternalStorageDirectory() + "/" + fname);
+                                //it.putExtra("filename", Environment.getExternalStorageDirectory() + "/" + fname);
+                                it.putExtra("filename", fullDirName + "/" + fname);
                                 startActivity(it);
                             }
                         }).setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -873,6 +877,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public String createStorageDir(String dirname){
+        String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath().toString();
+        Log.d(TAG, "ExtStorage: " + dir);
+        File file = new File(dir, dirname);
+        //String fullDirName = file.toString();  // record the full dir name in the global variable
+        if (!file.exists()){
+            if (!file.mkdir()){
+                Toast.makeText(this, "資料夾目錄建立失敗", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Create Directory:"+ file.toString() + " fail");
+            }
+            else
+                Log.d(TAG, "Directory:"+ file.toString() + " success");
+        }
+        else
+            Log.d(TAG, "Directory:"+ file.toString() + " already exists");
+        return file.toString();
+    }
 
     // file path
     /**
