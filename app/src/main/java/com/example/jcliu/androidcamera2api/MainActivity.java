@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
     String filename;
     protected static int spectrum_choice=0;
     static int delayShotNum = 0;
+    boolean returnFromReceiver;
 
     // option menu
     @Override
@@ -292,12 +293,13 @@ public class MainActivity extends AppCompatActivity {
                 final EditText editTextCnt = (EditText) mView.findViewById(R.id.delay_count);
                 final EditText editTextHr = (EditText) mView.findViewById(R.id.delay_hr);
                 final EditText editTextMin = (EditText) mView.findViewById(R.id.delay_min);
+                final EditText editTextSec = (EditText) mView.findViewById(R.id.delay_sec);
 
                 builder3.setView(mView);
                 builder3.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        int count, hr, min;
+                        int count, hr, min, sec;
                         if(!editTextCnt.getText().toString().trim().equals("")){
                             count = Integer.parseInt(editTextCnt.getText().toString());
                         } else
@@ -310,12 +312,17 @@ public class MainActivity extends AppCompatActivity {
                             min = Integer.parseInt(editTextMin.getText().toString());
                         } else
                             min = 0;
-                        Log.d(TAG, "Delay count =" + count + ", hr = " + hr + ", min=" + min);
+                        if(!editTextSec.getText().toString().trim().equals("")){
+                            sec = Integer.parseInt(editTextSec.getText().toString());
+                        } else
+                            sec = 0;
+                        Log.d(TAG, "Delay count =" + count + ", hr = " + hr + ", min=" + min + ", sec=" + sec);
                         for(int j=0; j<count; j++) {
                             Calendar cal = Calendar.getInstance();
                             // 設定於 ??? 後執行
                             cal.add(Calendar.HOUR, hr*(j+1));
                             cal.add(Calendar.MINUTE, min*(j+1));
+                            cal.add(Calendar.SECOND, sec*(j+1));
                             Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
                             intent.addCategory("D" + j);
                             PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
@@ -531,15 +538,17 @@ public class MainActivity extends AppCompatActivity {
             //createCameraPreview();
             //
 
-            if(ShotReceiver.Delay_shot == true){
+            //if(ShotReceiver.Delay_shot == true){
+            if(bundle != null){
                 Log.d(TAG, "Delay shot");
-                //oolean returnFromReceiver = bundle.getBoolean("Delay_shot");
-                //int delayShotID = bundle.getInt("Delay_shot_ID");
-                //Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
-                Log.d(TAG, "Shot ID="+ShotReceiver.delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
+                returnFromReceiver = bundle.getBoolean("Delay_shot");
+                int delayShotID = bundle.getInt("Delay_shot_ID");
+                Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
+                Log.d(TAG, "Shot ID="+delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
                 //takePictureBtn.callOnClick();
-                if(ShotReceiver.delayShotID > delayShotNum) {
-                    delayShotNum = ShotReceiver.delayShotID;
+                //if(ShotReceiver.delayShotID > delayShotNum) {
+                if(delayShotID > delayShotNum) {
+                    delayShotNum = delayShotID;
                     takePicture();
                 } else{
                     createCameraPreview();
@@ -682,8 +691,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onResume");
 
         // 間隔拍攝
-        //Intent it = this.getIntent();
-        //bundle = it.getExtras();
+        Intent it = this.getIntent();
+        bundle = it.getExtras();
         //
         if(textureView.isAvailable()){
             Log.d(TAG, "on Resume: open camera");
@@ -811,27 +820,32 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "takePicture(): onCaptureCompleted");
                     Toast.makeText(MainActivity.this, "saved:"+file+"\n"+mExposureTime/1e9+" sec", Toast.LENGTH_SHORT).show();
                     // 拍照後直接計算
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setTitle("Perform spectrum computation?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            Intent it = null;
-                            if(photoOption ==0){
-                                it = new Intent(MainActivity.this, CalActivity.class);
-                            } else {
-                                it = new Intent(MainActivity.this, ComputeActivity.class);
-                                it.putExtra("class", photoOption-1);
+                    if(!returnFromReceiver) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setTitle("Perform spectrum computation?").setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                Intent it = null;
+                                if (photoOption == 0) {
+                                    it = new Intent(MainActivity.this, CalActivity.class);
+                                } else {
+                                    it = new Intent(MainActivity.this, ComputeActivity.class);
+                                    it.putExtra("class", photoOption - 1);
+                                }
+                                it.putExtra("filename", Environment.getExternalStorageDirectory() + "/" + fname);
+                                startActivity(it);
                             }
-                            it.putExtra("filename", Environment.getExternalStorageDirectory()+"/"+fname);
-                            startActivity(it);
-                        }
-                    }).setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            MainActivity.segmented = true;
-                            createCameraPreview();
-                        }
-                    }).show();
+                        }).setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                MainActivity.segmented = true;
+                                createCameraPreview();
+                            }
+                        }).show();
+                    } else {
+                        returnFromReceiver = false;
+                        createCameraPreview();
+                    }
                 }
             };
             myCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback(){

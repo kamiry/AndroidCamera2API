@@ -32,7 +32,7 @@ public class ShotReceiver extends BroadcastReceiver {
 
         Delay_shot = true;
         delayShotID ++;
-        /*delayShotID ++;
+
         Intent it = new Intent(context, MainActivity.class);
         Bundle bundle = new Bundle();
         bundle.putBoolean("Delay_shot", true);
@@ -40,6 +40,6 @@ public class ShotReceiver extends BroadcastReceiver {
         it.putExtras(bundle);
 
         context.startActivity(it);
-        */
+
     }
 }
