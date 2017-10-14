@@ -271,6 +271,7 @@ public class ComputeActivity extends AppCompatActivity {
 
             do {
                 start = 0;
+                redo_flag = false;
                 for (int i = 0; i < 3; i++) {
                     // left end point
                     bound[i][0] = -1;
@@ -282,6 +283,7 @@ public class ComputeActivity extends AppCompatActivity {
                     }
                     if (bound[i][0] == -1) {
                         redo_flag = true;
+                        Log.d(TAG, "Redo");
                         break;
                     }
                     //
@@ -297,13 +299,13 @@ public class ComputeActivity extends AppCompatActivity {
                         }
                     }
                     start = bound[i][1];
-                    Log.d(TAG, "lef bound=" + bound[i][0] + ", right bound=" + bound[i][1] + ", peak value=" + peaks[i] + ", peaksPos=" + peaksPos[i]);
+                    Log.d(TAG, i + " :left bound=" + bound[i][0] + ", right bound=" + bound[i][1] + ", peak value=" + peaks[i] + ", peaksPos=" + peaksPos[i]);
                 }
                 cnt++;
                 th[0] = (threshold-0.5*cnt) * peak;
                 th[1] = (threshold-0.5*cnt-0.1) * peak;
 
-            } while (redo_flag);
+            } while (redo_flag && cnt < 5);
 
              // equalize segment size
 
