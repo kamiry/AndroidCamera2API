@@ -105,15 +105,16 @@ public class MainActivity extends AppCompatActivity {
     static float focusDist = -1;
     private SeekBar focusSeekBar;
     String fname_prefix="White";
-    String[] fname_options = {"CAL", "WHITE", "AIR", "WATER"};
+    String[] fname_options = {"CAL", "WHITE", "AIR", "WATER", "DELAY"};
     static int photoOption=0;
-    private String [] photoFilename = new String[4];
+    private String [] photoFilename = new String[5];
     public static boolean segmented = false;
     String filename;
     protected static int spectrum_choice=0;
     static int delayShotNum = 0;
     boolean returnFromReceiver;
-    String fullDirName;
+    public static String fullDirName;
+    public static String dFullDirName;
 
     // option menu
     @Override
@@ -300,6 +301,10 @@ public class MainActivity extends AppCompatActivity {
                 builder3.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmss");
+                        String subDir = "D" + dateFormat.format(new Date());
+                        dFullDirName = createStorageDir("SpectroMeterPro/"+subDir);
+
                         int count, hr, min, sec;
                         if(!editTextCnt.getText().toString().trim().equals("")){
                             count = Integer.parseInt(editTextCnt.getText().toString());
@@ -454,7 +459,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 photoOption = i;
                                 Log.d(TAG, "photo option:"+fname_options[photoOption]);
-                                takePicture();
+                                takePicture(fullDirName);
                             }
                         })
                         .show();
@@ -545,13 +550,16 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Delay shot");
                 returnFromReceiver = bundle.getBoolean("Delay_shot");
                 int delayShotID = bundle.getInt("Delay_shot_ID");
+                String dirName = bundle.getString("dirName");
+                dFullDirName = dirName;
                 Log.d(TAG,"Dealy shot =" +  returnFromReceiver);
                 Log.d(TAG, "Shot ID="+delayShotID+", ISO value = " + ISOvalue + ", Exposure time = " + expTime + ", Focus distance =" + focusDist + ", photo option=" + photoOption + ", AFmode = " + AFmode);
                 //takePictureBtn.callOnClick();
                 //if(ShotReceiver.delayShotID > delayShotNum) {
                 if(delayShotID > delayShotNum) {
                     delayShotNum = delayShotID;
-                    takePicture();
+                    photoOption = 4;
+                    takePicture(dirName);
                 } else{
                     createCameraPreview();
                 }
@@ -725,7 +733,7 @@ public class MainActivity extends AppCompatActivity {
         }*/
     }
 
-    protected void takePicture(){
+    protected void takePicture(String dirName){
         if (null == myCameraDevice) {
             Log.d(TAG, "takePicture(): camera device is null");
             return;
@@ -780,7 +788,8 @@ public class MainActivity extends AppCompatActivity {
             photoFilename[photoOption] = fname; // record for calculating spectrum
             Log.d(TAG, "takePicture(): filename -" + fname);
             //final File file = new File(Environment.getExternalStorageDirectory()+"/"+fname);
-            final File file = new File(fullDirName+"/"+fname);
+            //final File file = new File(fullDirName+"/"+fname);
+            final File file = new File(dirName+"/"+fname);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
 
                 @Override

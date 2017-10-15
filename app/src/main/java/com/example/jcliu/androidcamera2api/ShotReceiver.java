@@ -37,6 +37,7 @@ public class ShotReceiver extends BroadcastReceiver {
         Bundle bundle = new Bundle();
         bundle.putBoolean("Delay_shot", true);
         bundle.putInt("Delay_shot_ID", delayShotID);
+        bundle.putString("dirName", MainActivity.dFullDirName);
         it.putExtras(bundle);
 
         context.startActivity(it);
