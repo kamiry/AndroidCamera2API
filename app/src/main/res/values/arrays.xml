@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="photo_option">
-        <item>calibrate</item>
-        <item>white light</item>
-        <item>sample in air</item>
-        <item>sample in water</item>
+        <item>波長校正影像</item>
+        <item>白光影像</item>
+        <item>空氣中樣本</item>
+        <item>溶液中樣本</item>
     </string-array>
     <string-array name="sample_option">
         <item>Left sample</item>

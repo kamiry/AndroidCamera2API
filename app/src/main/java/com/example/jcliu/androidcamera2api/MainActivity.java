@@ -50,6 +50,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -154,6 +156,211 @@ public class MainActivity extends AppCompatActivity {
                         }).show();
                 break;
             case R.id.spectrum_view:
+                builder = new AlertDialog.Builder(MainActivity.this);
+
+                builder.setTitle(R.string.spectrum_checklist);
+                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                View mView = inflater.inflate(R.layout.spectrum_checklist, null);
+                final CheckBox checkBoxCal = (CheckBox) mView.findViewById(R.id.chkCal);
+                final CheckBox checkBoxWhite = (CheckBox) mView.findViewById(R.id.chkWhite);
+                final CheckBox checkBoxAir = (CheckBox) mView.findViewById(R.id.chkAir);
+                final CheckBox checkBoxWater = (CheckBox) mView.findViewById(R.id.chkWater);
+
+                if(CalActivity.wavelength == null) {
+                    checkBoxCal.setChecked(false);
+                    checkBoxCal.setEnabled(true);
+                }
+                else{
+                    checkBoxCal.setChecked(true);
+                    //checkBoxCal.setEnabled(false);
+                }
+
+                if(ComputeActivity.signalSource == null){
+                    checkBoxWhite.setChecked(false);
+                    checkBoxWhite.setEnabled(true);
+                } else {
+                    if(ComputeActivity.signalSource[0][0] == null) {
+                        checkBoxWhite.setChecked(false);
+                        checkBoxWhite.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWhite.setChecked(true);
+                        //checkBoxWhite.setEnabled(false);
+                    }
+                    if(ComputeActivity.signalSource[1][0] == null) {
+                        checkBoxAir.setChecked(false);
+                        checkBoxAir.setEnabled(true);
+                    }
+                    else{
+                        checkBoxAir.setChecked(true);
+                        //checkBoxAir.setEnabled(false);
+                    }
+                    if(ComputeActivity.signalSource[2][0] == null) {
+                        checkBoxWater.setChecked(false);
+                        checkBoxWater.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWater.setChecked(true);
+                        //checkBoxWater.setEnabled(false);
+                    }
+                }
+
+                CheckBox.OnCheckedChangeListener chklistener = new CheckBox.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                        if(compoundButton == checkBoxCal){
+                            Log.d(TAG, "Cal");
+                            checkBoxCal.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 0);
+                        }
+                        if(compoundButton == checkBoxWhite){
+                            Log.d(TAG, "White");
+                            checkBoxWhite.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 1);
+                        }
+                        if(compoundButton == checkBoxAir){
+                            Log.d(TAG, "Air");
+                            checkBoxAir.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 2);
+                        }
+                        if(compoundButton == checkBoxWater){
+                            Log.d(TAG, "Water");
+                            checkBoxWater.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 3);
+                        }
+                    }
+                };
+
+                checkBoxCal.setOnCheckedChangeListener(chklistener);
+                checkBoxWhite.setOnCheckedChangeListener(chklistener);
+                checkBoxAir.setOnCheckedChangeListener(chklistener);
+                checkBoxWater.setOnCheckedChangeListener(chklistener);
+                builder.setView(mView);
+                builder.setPositiveButton("進行分析", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if(checkBoxAir.isChecked() && checkBoxCal.isChecked() && checkBoxWater.isChecked() && checkBoxWhite.isChecked()) {
+
+                            AlertDialog.Builder builder3 = new AlertDialog.Builder(MainActivity.this);
+                            DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    spectrum_choice = i;
+                                    Log.d(TAG, "spectrum choice:" + spectrum_choice);
+                                }
+                            };
+                            builder3.setTitle(R.string.spectrum_object);
+                            builder3.setSingleChoiceItems(R.array.sample_option, -1, onClickListener);
+                            builder3.setPositiveButton("Normalized", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    Log.d(TAG, "Normalized");
+                                    // initialized normalized spectrum array
+                                    int length = ComputeActivity.signalSource[0][0].length;
+                                    Log.d(TAG, "length =" + length);
+                                    if (ComputeActivity.signalSource[3][0] == null) {
+                                        for (int j = 0; j < 3; j++) {
+                                            ComputeActivity.signalSource[3][j] = new double[length];
+                                            ComputeActivity.signalSource[4][j] = new double[length];
+                                            Log.d(TAG, "initialize source array[3,4][" + j + "]");
+                                        }
+                                    }
+                                    // compute normalized spectrum
+                                    for (int j = 0; j < length; j++) {
+                                        //Log.d(TAG, "i="+i+", j="+j);
+                                        if (ComputeActivity.signalSource[0][spectrum_choice][j] != 0) {
+                                            ComputeActivity.signalSource[3][spectrum_choice][j] = ComputeActivity.signalSource[1][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
+                                            ComputeActivity.signalSource[4][spectrum_choice][j] = ComputeActivity.signalSource[2][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
+                                        } else {
+                                            ComputeActivity.signalSource[3][spectrum_choice][j] = 0;
+                                            ComputeActivity.signalSource[4][spectrum_choice][j] = 0;
+                                        }
+                                        //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
+                                    }
+                                    Log.d(TAG, "Normalized ok");
+                                    Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
+
+                                    switch (spectrum_choice) {
+                                        case 0: //Left sample
+                                            //Log.d(TAG, "source[3][0][half]="+ComputeActivity.signalSource[3][0][length/2]+", source[1][0][half]="+ComputeActivity.signalSource[1][0][length/2]);
+                                            it5.putExtra("title", "Left Sample Spectrum");
+                                            break;
+                                        case 1: //Central sample
+                                            it5.putExtra("title", "Central Sample Spectrum");
+                                            break;
+                                        case 2: //Right sample
+                                            it5.putExtra("title", "Right Sample Spectrum");
+                                            break;
+                                    }
+                                    it5.putExtra("numChart", 2);
+                                    it5.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
+                                    it5.putExtra("signal name 1", " In Air ");
+                                    it5.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
+                                    it5.putExtra("signal name 2", " In Water ");
+                                    Log.d(TAG, "start chart activity");
+                                    startActivity(it5);
+                                }
+                            });
+                            builder3.setNegativeButton("Raw", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    Log.d(TAG, "Raw");
+                                    switch (spectrum_choice) {
+                                        case 0: //Left sample
+                                            Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                            it5.putExtra("title", "Left Sample Spectrum");
+                                            it5.putExtra("numChart", 3);
+                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][0]);
+                                            it5.putExtra("signal name 1", " White Light ");
+                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][0]);
+                                            it5.putExtra("signal name 2", " In Air ");
+                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][0]);
+                                            it5.putExtra("signal name 3", " In Water ");
+                                            startActivity(it5);
+                                            break;
+                                        case 1: //Central sample
+                                            it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                            it5.putExtra("title", "Central Sample Spectrum");
+                                            it5.putExtra("numChart", 3);
+                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
+                                            it5.putExtra("signal name 1", " White Light ");
+                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][1]);
+                                            it5.putExtra("signal name 2", " In Air ");
+                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][1]);
+                                            it5.putExtra("signal name 3", " In Water ");
+                                            startActivity(it5);
+                                            break;
+                                        case 2: //Right sample
+                                            it5 = new Intent(MainActivity.this, ChartActivity.class);
+                                            it5.putExtra("title", "Right Sample Spectrum");
+                                            it5.putExtra("numChart", 3);
+                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][2]);
+                                            it5.putExtra("signal name 1", " White Light ");
+                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][2]);
+                                            it5.putExtra("signal name 2", " In Air ");
+                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][2]);
+                                            it5.putExtra("signal name 3", " In Water ");
+                                            startActivity(it5);
+                                            break;
+                                    }
+                                }
+                            });
+                            builder3.show();
+                        } else
+                            Toast.makeText(MainActivity.this, "資料不足，請確認清單選項皆已勾選", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.show();
+
+                /*
                 boolean breaknote = false;
                 String notify_msg = "";
 
@@ -285,20 +492,21 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 builder3.show();
+                */
                 break;
             case R.id.delay_shot:
-                builder3 = new AlertDialog.Builder(MainActivity.this);
+                builder = new AlertDialog.Builder(MainActivity.this);
 
-                builder3.setTitle(R.string.delay_time);
-                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
-                View mView = inflater.inflate(R.layout.dialog_delaytime, null);
+                builder.setTitle(R.string.delay_time);
+                inflater = MainActivity.this.getLayoutInflater();
+                mView = inflater.inflate(R.layout.dialog_delaytime, null);
                 final EditText editTextCnt = (EditText) mView.findViewById(R.id.delay_count);
                 final EditText editTextHr = (EditText) mView.findViewById(R.id.delay_hr);
                 final EditText editTextMin = (EditText) mView.findViewById(R.id.delay_min);
                 final EditText editTextSec = (EditText) mView.findViewById(R.id.delay_sec);
 
-                builder3.setView(mView);
-                builder3.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                builder.setView(mView);
+                builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("HHmmss");
@@ -337,7 +545,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
-                builder3.show();
+                builder.show();
 
                 /*
                 Calendar cal = Calendar.getInstance();
