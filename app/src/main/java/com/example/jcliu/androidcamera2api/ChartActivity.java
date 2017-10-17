@@ -1,10 +1,13 @@
 package com.example.jcliu.androidcamera2api;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 
@@ -24,13 +27,88 @@ public class ChartActivity extends AppCompatActivity {
     double[][] spectrum = null;
     int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN};
     static int leftIdx=0, rightIdx=0;
+    boolean is_menu;
+
+    // option menu
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if(is_menu)
+            getMenuInflater().inflate(R.menu.menu_chart, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        int spectrum_choice=0;
+        Intent it = new Intent(this, ChartActivity.class);
+
+        switch (id){
+            case R.id.sample_1:
+                spectrum_choice = 0;
+                it.putExtra("title", "Left Sample Spectrum");
+                break;
+            case R.id.sample_2:
+                spectrum_choice = 1;
+                it.putExtra("title", "Central Sample Spectrum");
+                break;
+            case R.id.sample_3:
+                spectrum_choice = 2;
+                it.putExtra("title", "Right Sample Spectrum");
+                break;
+        }
+        // calculate normalized spectrum
+        Log.d(TAG, "Normalized");
+        // initialized normalized spectrum array
+        /*
+        int length = ComputeActivity.signalSource[0][0].length;
+        Log.d(TAG, "length =" + length);
+        if (ComputeActivity.signalSource[3][0] == null) { // 初始化正規光譜陣列
+            for (int j = 0; j < 3; j++) {
+                ComputeActivity.signalSource[3][j] = new double[length];
+                ComputeActivity.signalSource[4][j] = new double[length];
+                Log.d(TAG, "initialize source array[3,4][" + j + "]");
+            }
+        }
+        // compute normalized spectrum
+        for (int j = 0; j < length; j++) {
+            //Log.d(TAG, "i="+i+", j="+j);
+            if (ComputeActivity.signalSource[0][spectrum_choice][j] != 0) {
+                ComputeActivity.signalSource[3][spectrum_choice][j] = ComputeActivity.signalSource[1][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
+                ComputeActivity.signalSource[4][spectrum_choice][j] = ComputeActivity.signalSource[2][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
+            } else {
+                ComputeActivity.signalSource[3][spectrum_choice][j] = 0;
+                ComputeActivity.signalSource[4][spectrum_choice][j] = 0;
+            }
+            //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
+        }
+        Log.d(TAG, "Normalized ok");
+*/
+        it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        it.putExtra("is_menu", true);
+        it.putExtra("numChart", 2);
+        it.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
+        it.putExtra("signal name 1", " In Air ");
+        it.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
+        it.putExtra("signal name 2", " In Water ");
+        Log.d(TAG, "start chart activity");
+        startActivity(it);
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Intent it = getIntent();
+        is_menu = it.getBooleanExtra("is_menu", false);
+        Log.d(TAG, "ChartActivity: is_menu="+is_menu);
+        //if(!is_menu)
+        //    this.invalidateOptionsMenu();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
+
         LinearLayout chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
-        Intent it = getIntent();
+
         //wavelength = it.getDoubleArrayExtra("wavelength");
         title = it.getStringExtra("title");
         numChart = it.getIntExtra("numChart", 1);
@@ -53,7 +131,7 @@ public class ChartActivity extends AppCompatActivity {
 
         if (CalActivity.wavelength != null && leftIdx==0) {
             for(int i=0; i<CalActivity.wavelength.length; i++){
-                if(CalActivity.wavelength[i] > 400){
+                if(CalActivity.wavelength[i] > 430){
                     leftIdx = i;
                     break;
                 }

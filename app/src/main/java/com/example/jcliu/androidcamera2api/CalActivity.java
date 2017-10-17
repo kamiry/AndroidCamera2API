@@ -55,6 +55,7 @@ public class CalActivity extends AppCompatActivity {
                 //startActivity(it);
                 Intent it = new Intent(CalActivity.this, ChartActivity.class);
                 it.putExtra("title", "Calibration Light Raw Spectrum");
+                it.putExtra("is_menu", false);
                 it.putExtra("numChart", 1);
                 it.putExtra("lightsource1", calsource);
                 it.putExtra("signal name 1", " Calibration light ");
@@ -140,6 +141,7 @@ public class CalActivity extends AppCompatActivity {
                                         //it.putExtra("calsource", calsource);
                                         Intent it = new Intent(CalActivity.this, ChartActivity.class);
                                         it.putExtra("title", "Calibration Light Raw Spectrum");
+                                        it.putExtra("is_menu", false);
                                         it.putExtra("numChart", 1);
                                         it.putExtra("lightsource1", calsource);
                                         it.putExtra("signal name 1", " Calibration light ");

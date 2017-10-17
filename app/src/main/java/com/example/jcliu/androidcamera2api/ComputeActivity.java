@@ -94,7 +94,7 @@ public class ComputeActivity extends AppCompatActivity {
         Intent it = getIntent();
         String fname = it.getStringExtra("filename");
         Log.d(TAG, "Compute, filename =" + fname);
-        sourceIdx = it.getIntExtra("class", 0);
+        sourceIdx = it.getIntExtra("class", 0); //important, which water source id
         Log.d(TAG, "class =" + sourceIdx);
         //
         //fname = "WhiteISO500Exp10_1507187344233.jpg";
@@ -213,7 +213,7 @@ public class ComputeActivity extends AppCompatActivity {
 
     public void lightsourceCalc(){
 
-        double peak = 0, l_min=1e100, threshold = 0.75;
+        double peak = 0, l_min=1e100, threshold = 0.6;
         double th1, th2;
         double [] th = new double[2];
         double [] peaks = new double[3];
@@ -288,6 +288,7 @@ public class ComputeActivity extends AppCompatActivity {
                     }
                     //
                     peaks[i] = 0; peaksPos[i] = -1;
+                    int gapCnt = 0;
                     for (int x = bound[i][0]; x < width; x++) {
                         if(lightsourceH[x] > peaks[i]){
                             peaks[i] = lightsourceH[x];
@@ -295,7 +296,8 @@ public class ComputeActivity extends AppCompatActivity {
                         }
                         if (lightsourceH[x] < th[1]) {
                             bound[i][1] = x;
-                            break;
+                            gapCnt ++;
+                            if(gapCnt > 5) break;
                         }
                     }
                     start = bound[i][1];

@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/photo_option"
-        android:title="拍攝標的"
-        app:showAsAction="never"
-            />
-    <item android:id="@+id/computation"
-        android:title="光譜計算"
-        app:showAsAction="never"
-        />
+
     <item android:id="@+id/spectrum_view"
-        android:title="樣品光譜"
+        android:title="光譜分析"
         app:showAsAction="never"
         />
     <item android:id="@+id/delay_shot"

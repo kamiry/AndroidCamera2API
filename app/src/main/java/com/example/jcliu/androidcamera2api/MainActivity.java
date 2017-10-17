@@ -129,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id){
+            /*
             case R.id.photo_option:
                 Log.d(TAG, "拍攝標的");
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -155,8 +156,9 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }).show();
                 break;
+                */
             case R.id.spectrum_view:
-                builder = new AlertDialog.Builder(MainActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
                 builder.setTitle(R.string.spectrum_checklist);
                 LayoutInflater inflater = MainActivity.this.getLayoutInflater();
@@ -248,112 +250,44 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if(checkBoxAir.isChecked() && checkBoxCal.isChecked() && checkBoxWater.isChecked() && checkBoxWhite.isChecked()) {
-
-                            AlertDialog.Builder builder3 = new AlertDialog.Builder(MainActivity.this);
-                            DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    spectrum_choice = i;
-                                    Log.d(TAG, "spectrum choice:" + spectrum_choice);
+                            // calculate normalized spectrum
+                            Log.d(TAG, "Normalized");
+                            spectrum_choice = 1;
+                            // initialized normalized spectrum array
+                            int length = ComputeActivity.signalSource[0][0].length;
+                            Log.d(TAG, "length =" + length);
+                            if (ComputeActivity.signalSource[3][0] == null) { // 初始化正規光譜陣列
+                                for (int j = 0; j < 3; j++) {
+                                    ComputeActivity.signalSource[3][j] = new double[length];
+                                    ComputeActivity.signalSource[4][j] = new double[length];
+                                    Log.d(TAG, "initialize source array[3,4][" + j + "]");
                                 }
-                            };
-                            builder3.setTitle(R.string.spectrum_object);
-                            builder3.setSingleChoiceItems(R.array.sample_option, -1, onClickListener);
-                            builder3.setPositiveButton("Normalized", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    Log.d(TAG, "Normalized");
-                                    // initialized normalized spectrum array
-                                    int length = ComputeActivity.signalSource[0][0].length;
-                                    Log.d(TAG, "length =" + length);
-                                    if (ComputeActivity.signalSource[3][0] == null) {
-                                        for (int j = 0; j < 3; j++) {
-                                            ComputeActivity.signalSource[3][j] = new double[length];
-                                            ComputeActivity.signalSource[4][j] = new double[length];
-                                            Log.d(TAG, "initialize source array[3,4][" + j + "]");
-                                        }
+                            }
+                            // compute all normalized spectrum (left, center, right)
+                            for(int k=0; k<3; k++) {
+                                for (int j = 0; j < length; j++) {
+                                    //Log.d(TAG, "i="+i+", j="+j);
+                                    if (ComputeActivity.signalSource[0][k][j] != 0) {
+                                        ComputeActivity.signalSource[3][k][j] = ComputeActivity.signalSource[1][k][j] / ComputeActivity.signalSource[0][k][j];
+                                        ComputeActivity.signalSource[4][k][j] = ComputeActivity.signalSource[2][k][j] / ComputeActivity.signalSource[0][k][j];
+                                    } else {
+                                        ComputeActivity.signalSource[3][k][j] = 0;
+                                        ComputeActivity.signalSource[4][k][j] = 0;
                                     }
-                                    // compute normalized spectrum
-                                    for (int j = 0; j < length; j++) {
-                                        //Log.d(TAG, "i="+i+", j="+j);
-                                        if (ComputeActivity.signalSource[0][spectrum_choice][j] != 0) {
-                                            ComputeActivity.signalSource[3][spectrum_choice][j] = ComputeActivity.signalSource[1][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-                                            ComputeActivity.signalSource[4][spectrum_choice][j] = ComputeActivity.signalSource[2][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-                                        } else {
-                                            ComputeActivity.signalSource[3][spectrum_choice][j] = 0;
-                                            ComputeActivity.signalSource[4][spectrum_choice][j] = 0;
-                                        }
-                                        //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
-                                    }
-                                    Log.d(TAG, "Normalized ok");
-                                    Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
-
-                                    switch (spectrum_choice) {
-                                        case 0: //Left sample
-                                            //Log.d(TAG, "source[3][0][half]="+ComputeActivity.signalSource[3][0][length/2]+", source[1][0][half]="+ComputeActivity.signalSource[1][0][length/2]);
-                                            it5.putExtra("title", "Left Sample Spectrum");
-                                            break;
-                                        case 1: //Central sample
-                                            it5.putExtra("title", "Central Sample Spectrum");
-                                            break;
-                                        case 2: //Right sample
-                                            it5.putExtra("title", "Right Sample Spectrum");
-                                            break;
-                                    }
-                                    it5.putExtra("numChart", 2);
-                                    it5.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
-                                    it5.putExtra("signal name 1", " In Air ");
-                                    it5.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
-                                    it5.putExtra("signal name 2", " In Water ");
-                                    Log.d(TAG, "start chart activity");
-                                    startActivity(it5);
+                                    //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
                                 }
-                            });
-                            builder3.setNegativeButton("Raw", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    Log.d(TAG, "Raw");
-                                    switch (spectrum_choice) {
-                                        case 0: //Left sample
-                                            Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                            it5.putExtra("title", "Left Sample Spectrum");
-                                            it5.putExtra("numChart", 3);
-                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][0]);
-                                            it5.putExtra("signal name 1", " White Light ");
-                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][0]);
-                                            it5.putExtra("signal name 2", " In Air ");
-                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][0]);
-                                            it5.putExtra("signal name 3", " In Water ");
-                                            startActivity(it5);
-                                            break;
-                                        case 1: //Central sample
-                                            it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                            it5.putExtra("title", "Central Sample Spectrum");
-                                            it5.putExtra("numChart", 3);
-                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
-                                            it5.putExtra("signal name 1", " White Light ");
-                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][1]);
-                                            it5.putExtra("signal name 2", " In Air ");
-                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][1]);
-                                            it5.putExtra("signal name 3", " In Water ");
-                                            startActivity(it5);
-                                            break;
-                                        case 2: //Right sample
-                                            it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                            it5.putExtra("title", "Right Sample Spectrum");
-                                            it5.putExtra("numChart", 3);
-                                            it5.putExtra("lightsource1", ComputeActivity.signalSource[0][2]);
-                                            it5.putExtra("signal name 1", " White Light ");
-                                            it5.putExtra("lightsource2", ComputeActivity.signalSource[1][2]);
-                                            it5.putExtra("signal name 2", " In Air ");
-                                            it5.putExtra("lightsource3", ComputeActivity.signalSource[2][2]);
-                                            it5.putExtra("signal name 3", " In Water ");
-                                            startActivity(it5);
-                                            break;
-                                    }
-                                }
-                            });
-                            builder3.show();
+                            }
+                            Log.d(TAG, "Normalized ok");
+                            Intent it = new Intent(MainActivity.this, ChartActivity.class);
+                            it.putExtra("title", "Central Sample Spectrum");
+                            it.putExtra("is_menu", true);
+                            it.putExtra("numChart", 2);
+                            it.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
+                            it.putExtra("signal name 1", " In Air ");
+                            it.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
+                            it.putExtra("signal name 2", " In Water ");
+                            Log.d(TAG, "start chart activity");
+                            startActivity(it);
                         } else
                             Toast.makeText(MainActivity.this, "資料不足，請確認清單選項皆已勾選", Toast.LENGTH_SHORT).show();
                     }
