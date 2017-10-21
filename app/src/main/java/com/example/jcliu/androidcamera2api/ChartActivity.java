@@ -28,6 +28,11 @@ public class ChartActivity extends AppCompatActivity {
     int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN, Color.MAGENTA, Color.YELLOW};
     static int leftIdx=0, rightIdx=0;
     boolean is_menu;
+    double [] RIU={1.3325, 1.3453, 1.3523, 1.3639};
+    double [][] peakNM = new double[4][3];
+    double [][] peakValue = new double[4][3];
+    LinearLayout chartContainer;
+    String [] AnalysisSignalName = {"Left", "Center", "Right"};
 
     // option menu
     @Override
@@ -43,61 +48,68 @@ public class ChartActivity extends AppCompatActivity {
         int spectrum_choice=0;
         Intent it = new Intent(this, ChartActivity.class);
 
-        switch (id){
-            case R.id.sample_1:
-                spectrum_choice = 0;
-                it.putExtra("title", "Left Sample Spectrum");
-                break;
-            case R.id.sample_2:
-                spectrum_choice = 1;
-                it.putExtra("title", "Central Sample Spectrum");
-                break;
-            case R.id.sample_3:
-                spectrum_choice = 2;
-                it.putExtra("title", "Right Sample Spectrum");
-                break;
-        }
-        // calculate normalized spectrum
-        Log.d(TAG, "Normalized");
-        // initialized normalized spectrum array
-        /*
-        int length = ComputeActivity.signalSource[0][0].length;
-        Log.d(TAG, "length =" + length);
-        if (ComputeActivity.signalSource[3][0] == null) { // 初始化正規光譜陣列
-            for (int j = 0; j < 3; j++) {
-                ComputeActivity.signalSource[3][j] = new double[length];
-                ComputeActivity.signalSource[4][j] = new double[length];
-                Log.d(TAG, "initialize source array[3,4][" + j + "]");
+        if(id == R.id.peakAnalysis){
+            // find peak in nm 600 to nm660
+            int start=0;
+            for(int i=0; i<CalActivity.wavelength.length; i++){
+                if(CalActivity.wavelength[i] > 600) {
+                    start = i;
+                    break;
+                }
             }
-        }
-        // compute normalized spectrum
-        for (int j = 0; j < length; j++) {
-            //Log.d(TAG, "i="+i+", j="+j);
-            if (ComputeActivity.signalSource[0][spectrum_choice][j] != 0) {
-                ComputeActivity.signalSource[3][spectrum_choice][j] = ComputeActivity.signalSource[1][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-                ComputeActivity.signalSource[4][spectrum_choice][j] = ComputeActivity.signalSource[2][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-            } else {
-                ComputeActivity.signalSource[3][spectrum_choice][j] = 0;
-                ComputeActivity.signalSource[4][spectrum_choice][j] = 0;
+            Log.d(TAG, "peakAnalysis start(600nm) =" + start);
+            for(int sig=2; sig<=numChart; sig++)
+                for(int pos=0; pos<3; pos++)
+                    peakValue[sig-2][pos]=0;
+
+            for(int i=start; i<CalActivity.wavelength.length; i++){
+                if(CalActivity.wavelength[i] < 660){
+                    for(int sig=2; sig<=numChart; sig++) {
+                        for (int pos = 0; pos < 3; pos++) {
+                            if (ComputeActivity.NsignalSource[sig][pos][i] > peakValue[sig - 2][pos]) {
+                                peakValue[sig - 2][pos] = ComputeActivity.NsignalSource[sig][pos][i];
+                                peakNM[sig - 2][pos] = CalActivity.wavelength[i];
+                            }
+                        }
+                    }
+                } else
+                    break;
             }
-            //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
+            //
+            for(int sig=2; sig<=numChart; sig++)
+                for(int pos=0; pos<3; pos++)
+                    Log.d(TAG, "peakNM["+sig+"]["+pos+"]="+ peakNM[sig-2][pos]);
+            // draw chart
+            View v = drawAnalysisChart();
+            chartContainer.addView(v, 0);
+        } else {
+            switch (id) {
+                case R.id.sample_1:
+                    spectrum_choice = 0;
+                    it.putExtra("title", "Left Sample Spectrum");
+                    break;
+                case R.id.sample_2:
+                    spectrum_choice = 1;
+                    it.putExtra("title", "Central Sample Spectrum");
+                    break;
+                case R.id.sample_3:
+                    spectrum_choice = 2;
+                    it.putExtra("title", "Right Sample Spectrum");
+                    break;
+            }
+            // calculate normalized spectrum
+            Log.d(TAG, "Normalized");
+            it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            it.putExtra("is_menu", true);
+            it.putExtra("numChart", numChart);
+            for (int k = 1; k <= numChart; k++) {
+                Log.d(TAG, "putExtra: signal " + k);
+                it.putExtra("lightsource" + k, ComputeActivity.NsignalSource[k][spectrum_choice]);
+                it.putExtra("signal name " + k, signalName[k - 1]);
+            }
+            Log.d(TAG, "start chart activity");
+            startActivity(it);
         }
-        Log.d(TAG, "Normalized ok");
-*/
-        it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        it.putExtra("is_menu", true);
-        it.putExtra("numChart", numChart);
-        for(int k=1; k<=numChart; k++){
-            Log.d(TAG, "putExtra: signal "+ k);
-            it.putExtra("lightsource"+k, ComputeActivity.NsignalSource[k][spectrum_choice]);
-            it.putExtra("signal name "+k, " In "+signalName[k-1]);
-        }
-        //it.putExtra("lightsource1", ComputeActivity.NsignalSource[1][spectrum_choice]);
-        //it.putExtra("signal name 1", " In Air ");
-        //it.putExtra("lightsource2", ComputeActivity.NsignalSource[2][spectrum_choice]);
-        //it.putExtra("signal name 2", " In Water ");
-        Log.d(TAG, "start chart activity");
-        startActivity(it);
         return super.onOptionsItemSelected(item);
     }
 
@@ -112,7 +124,7 @@ public class ChartActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
 
-        LinearLayout chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
+       chartContainer = (LinearLayout) findViewById(R.id.activity_chart);
 
         //wavelength = it.getDoubleArrayExtra("wavelength");
         title = it.getStringExtra("title");
@@ -209,4 +221,61 @@ public class ChartActivity extends AppCompatActivity {
 
         return mChart;
     }
+
+
+    public View drawAnalysisChart(){
+
+        XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
+        //multiRenderer.setXLabels(0);
+        multiRenderer.setChartTitle("Wavelength Sensitivity");
+        multiRenderer.setChartTitleTextSize(50);
+        multiRenderer.setXTitle("Refractive index value");// X Title
+        multiRenderer.setYTitle("Resonance wavelength");
+        //multiRenderer.setYTitle("Energy");// Y Title
+        multiRenderer.setLabelsTextSize(40);// Label Text Size
+        multiRenderer.setAxisTitleTextSize(40);// Axis Title Text Size
+        multiRenderer.setLegendTextSize(35);
+        multiRenderer.setLegendHeight(150);
+        multiRenderer.setMargins(new int[]{80, 120, 130, 50}); //top, left, down, right
+        multiRenderer.setMarginsColor(Color.WHITE);
+        multiRenderer.setXAxisColor(Color.BLACK);
+        multiRenderer.setXLabelsColor(Color.BLACK);
+        multiRenderer.setYAxisColor(Color.BLACK);
+        multiRenderer.setYLabelsColor(0, Color.BLACK);
+        multiRenderer.setLabelsColor(Color.BLACK);
+        //multiRenderer.setXAxisMin(410);
+        //multiRenderer.setXAxisMax(680);
+        //multiRenderer.setZoomButtonsVisible(true);// Zoom?
+        multiRenderer.setShowGrid(true);// show Grid
+
+        // Creating a dataset to hold each series
+        XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
+
+        XYSeries [] LSeries = new XYSeries[3];
+        XYSeriesRenderer [] LSeriesRenderer = new XYSeriesRenderer[3];
+
+        for(int i=0; i<3; i++) {
+            LSeries[i] = new XYSeries(AnalysisSignalName[i]);
+            for (int j = 0; j < numChart-1; j++) {
+                LSeries[i].add(RIU[j], peakNM[j][i]);
+            }
+
+            Log.d(TAG, "analysisDraw add ok");
+
+            // Adding Income Series to the dataseti
+            dataset.addSeries(LSeries[i]);
+
+            // 線的描述
+            LSeriesRenderer[i] = new XYSeriesRenderer();
+            LSeriesRenderer[i].setLineWidth(2);
+            LSeriesRenderer[i].setColor(defColor[i]);
+            LSeriesRenderer[i].setPointStyle(PointStyle.CIRCLE);
+
+            multiRenderer.addSeriesRenderer(LSeriesRenderer[i]);
+        }
+        View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
+
+        return mChart;
+    }
+
 }
