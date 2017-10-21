@@ -28,11 +28,12 @@ public class ChartActivity extends AppCompatActivity {
     int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN, Color.MAGENTA, Color.YELLOW};
     static int leftIdx=0, rightIdx=0;
     boolean is_menu;
-    double [] RIU={1.3325, 1.3453, 1.3523, 1.3639};
-    double [][] peakNM = new double[4][3];
+    final double [] RIU={1.3325, 1.3453, 1.3523, 1.3639};
+    static double [][] peakNM = new double[4][3];
     double [][] peakValue = new double[4][3];
     LinearLayout chartContainer;
     String [] AnalysisSignalName = {"Left", "Center", "Right"};
+    private static boolean analysisMenu = false;
 
     // option menu
     @Override
@@ -49,6 +50,7 @@ public class ChartActivity extends AppCompatActivity {
         Intent it = new Intent(this, ChartActivity.class);
 
         if(id == R.id.peakAnalysis){
+            analysisMenu = true;
             // find peak in nm 600 to nm660
             int start=0;
             for(int i=0; i<CalActivity.wavelength.length; i++){
@@ -83,6 +85,7 @@ public class ChartActivity extends AppCompatActivity {
             View v = drawAnalysisChart();
             chartContainer.addView(v, 0);
         } else {
+            analysisMenu = false;
             switch (id) {
                 case R.id.sample_1:
                     spectrum_choice = 0;
@@ -140,8 +143,14 @@ public class ChartActivity extends AppCompatActivity {
             Log.d(TAG, "signal name ="+signalName[i-1]+", spectrum length="+spectrum[i-1].length);
         }
 
-        View v = drawChart();
-        chartContainer.addView(v, 0);
+        if(!analysisMenu) {
+            View v = drawChart();
+            chartContainer.addView(v, 0);
+        } else{
+            View v = drawAnalysisChart();
+            chartContainer.addView(v, 0);
+        }
+
     }
 
     public View drawChart(){
