@@ -25,7 +25,7 @@ public class ChartActivity extends AppCompatActivity {
     protected int numChart;
     String [] signalName = null;
     double[][] spectrum = null;
-    int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN};
+    int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN, Color.MAGENTA, Color.YELLOW};
     static int leftIdx=0, rightIdx=0;
     boolean is_menu;
 
@@ -86,11 +86,16 @@ public class ChartActivity extends AppCompatActivity {
 */
         it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         it.putExtra("is_menu", true);
-        it.putExtra("numChart", 2);
-        it.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
-        it.putExtra("signal name 1", " In Air ");
-        it.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
-        it.putExtra("signal name 2", " In Water ");
+        it.putExtra("numChart", numChart);
+        for(int k=1; k<=numChart; k++){
+            Log.d(TAG, "putExtra: signal "+ k);
+            it.putExtra("lightsource"+k, ComputeActivity.NsignalSource[k][spectrum_choice]);
+            it.putExtra("signal name "+k, " In "+signalName[k-1]);
+        }
+        //it.putExtra("lightsource1", ComputeActivity.NsignalSource[1][spectrum_choice]);
+        //it.putExtra("signal name 1", " In Air ");
+        //it.putExtra("lightsource2", ComputeActivity.NsignalSource[2][spectrum_choice]);
+        //it.putExtra("signal name 2", " In Water ");
         Log.d(TAG, "start chart activity");
         startActivity(it);
         return super.onOptionsItemSelected(item);

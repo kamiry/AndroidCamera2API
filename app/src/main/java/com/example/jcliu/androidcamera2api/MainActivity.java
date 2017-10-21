@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -53,6 +54,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -117,6 +119,10 @@ public class MainActivity extends AppCompatActivity {
     boolean returnFromReceiver;
     public static String fullDirName;
     public static String dFullDirName;
+    // for multiple curve chart
+    int maxChkNum=0;
+    CheckBox addChkBox [] = new CheckBox[10]; // at most 10 more checkBox
+    String[] signalName = {"Air", "Water", "Fluid1", "Fluid2", "Fluid3", "Fluid4", "Fluid5"};
 
     // option menu
     @Override
@@ -158,15 +164,22 @@ public class MainActivity extends AppCompatActivity {
                 break;
                 */
             case R.id.spectrum_view:
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
                 builder.setTitle(R.string.spectrum_checklist);
                 LayoutInflater inflater = MainActivity.this.getLayoutInflater();
                 View mView = inflater.inflate(R.layout.spectrum_checklist, null);
+                final LinearLayout linearLayout = (LinearLayout) mView.findViewById(R.id.spectrum_layout);
+
                 final CheckBox checkBoxCal = (CheckBox) mView.findViewById(R.id.chkCal);
                 final CheckBox checkBoxWhite = (CheckBox) mView.findViewById(R.id.chkWhite);
                 final CheckBox checkBoxAir = (CheckBox) mView.findViewById(R.id.chkAir);
                 final CheckBox checkBoxWater = (CheckBox) mView.findViewById(R.id.chkWater);
+                final CheckBox checkBoxWater1 = (CheckBox) mView.findViewById(R.id.chkWater1);
+                final CheckBox checkBoxWater2 = (CheckBox) mView.findViewById(R.id.chkWater2);
+                final CheckBox checkBoxWater3 = (CheckBox) mView.findViewById(R.id.chkWater3);
+                final CheckBox checkBoxWater4 = (CheckBox) mView.findViewById(R.id.chkWater4);
 
                 if(CalActivity.wavelength == null) {
                     checkBoxCal.setChecked(false);
@@ -205,9 +218,41 @@ public class MainActivity extends AppCompatActivity {
                         checkBoxWater.setChecked(true);
                         //checkBoxWater.setEnabled(false);
                     }
+                    if(ComputeActivity.signalSource[3][0] == null) {
+                        checkBoxWater1.setChecked(false);
+                        checkBoxWater1.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWater1.setChecked(true);
+                        //checkBoxWater.setEnabled(false);
+                    }
+                    if(ComputeActivity.signalSource[4][0] == null) {
+                        checkBoxWater2.setChecked(false);
+                        checkBoxWater2.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWater2.setChecked(true);
+                        //checkBoxWater.setEnabled(false);
+                    }
+                    if(ComputeActivity.signalSource[5][0] == null) {
+                        checkBoxWater3.setChecked(false);
+                        checkBoxWater3.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWater3.setChecked(true);
+                        //checkBoxWater.setEnabled(false);
+                    }
+                    if(ComputeActivity.signalSource[6][0] == null) {
+                        checkBoxWater4.setChecked(false);
+                        checkBoxWater4.setEnabled(true);
+                    }
+                    else{
+                        checkBoxWater4.setChecked(true);
+                        //checkBoxWater.setEnabled(false);
+                    }
                 }
 
-                CheckBox.OnCheckedChangeListener chklistener = new CheckBox.OnCheckedChangeListener() {
+                final CheckBox.OnCheckedChangeListener chklistener = new CheckBox.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                         if(compoundButton == checkBoxCal){
@@ -238,6 +283,55 @@ public class MainActivity extends AppCompatActivity {
                             it.setType("image/*");
                             startActivityForResult(it, 3);
                         }
+                        if(compoundButton == checkBoxWater1){
+                            maxChkNum = 3;
+                            Log.d(TAG, "Water1");
+                            checkBoxWater1.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 4);
+                        }
+                        if(compoundButton == checkBoxWater2){
+                            maxChkNum = 4;
+                            Log.d(TAG, "Water2");
+                            checkBoxWater2.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 5);
+                        }
+                        if(compoundButton == checkBoxWater3){
+                            maxChkNum = 5;
+                            Log.d(TAG, "Water3");
+                            checkBoxWater3.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 6);
+                        }
+                        if(compoundButton == checkBoxWater4){
+                            maxChkNum = 6;
+                            Log.d(TAG, "Water4");
+                            checkBoxWater4.setChecked(true);
+                            Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                            it.setType("image/*");
+                            startActivityForResult(it, 7);
+                        }
+/*
+                        for(int i=0; i<chkNum; i++){
+                            if(compoundButton == addChkBox[i]){
+                                Log.d(TAG, "Additional CheckBox " + i+1);
+                                if(chkNum == chkNum-1) { // the last additional checkbox added
+                                    chkNum ++;
+                                    addChkBox[chkNum-1] = new CheckBox(MainActivity.this);
+                                    addChkBox[chkNum-1].setText("新增溶液中樣品 " + chkNum);
+                                    linearLayout.addView(addChkBox[chkNum-1]);
+                                }
+                                addChkBox[i].setChecked(true);
+                                Intent it = new Intent(Intent.ACTION_GET_CONTENT);
+                                it.setType("image/*");
+                                startActivityForResult(it, 4+i);
+                            }
+                        }
+                        */
                     }
                 };
 
@@ -245,47 +339,61 @@ public class MainActivity extends AppCompatActivity {
                 checkBoxWhite.setOnCheckedChangeListener(chklistener);
                 checkBoxAir.setOnCheckedChangeListener(chklistener);
                 checkBoxWater.setOnCheckedChangeListener(chklistener);
+                checkBoxWater1.setOnCheckedChangeListener(chklistener);
+                checkBoxWater2.setOnCheckedChangeListener(chklistener);
+                checkBoxWater3.setOnCheckedChangeListener(chklistener);
+                checkBoxWater4.setOnCheckedChangeListener(chklistener);
+
                 builder.setView(mView);
                 builder.setPositiveButton("進行分析", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if(checkBoxAir.isChecked() && checkBoxCal.isChecked() && checkBoxWater.isChecked() && checkBoxWhite.isChecked()) {
+                            if(maxChkNum == 0)
+                                maxChkNum = 2;
                             // calculate normalized spectrum
                             Log.d(TAG, "Normalized");
                             spectrum_choice = 1;
                             // initialized normalized spectrum array
                             int length = ComputeActivity.signalSource[0][0].length;
                             Log.d(TAG, "length =" + length);
-                            if (ComputeActivity.signalSource[3][0] == null) { // 初始化正規光譜陣列
-                                for (int j = 0; j < 3; j++) {
-                                    ComputeActivity.signalSource[3][j] = new double[length];
-                                    ComputeActivity.signalSource[4][j] = new double[length];
-                                    Log.d(TAG, "initialize source array[3,4][" + j + "]");
+                            if (ComputeActivity.NsignalSource[1][0] == null) { // 初始化正規光譜陣列
+                                for(int srcidx=1; srcidx<ComputeActivity.SRCNUM; srcidx++) {
+                                    for (int j = 0; j < 3; j++) {
+                                        ComputeActivity.NsignalSource[srcidx][j] = new double[length];
+                                        Log.d(TAG, "initialize source array[3,4][" + j + "]");
+                                    }
                                 }
                             }
                             // compute all normalized spectrum (left, center, right)
-                            for(int k=0; k<3; k++) {
-                                for (int j = 0; j < length; j++) {
-                                    //Log.d(TAG, "i="+i+", j="+j);
-                                    if (ComputeActivity.signalSource[0][k][j] != 0) {
-                                        ComputeActivity.signalSource[3][k][j] = ComputeActivity.signalSource[1][k][j] / ComputeActivity.signalSource[0][k][j];
-                                        ComputeActivity.signalSource[4][k][j] = ComputeActivity.signalSource[2][k][j] / ComputeActivity.signalSource[0][k][j];
-                                    } else {
-                                        ComputeActivity.signalSource[3][k][j] = 0;
-                                        ComputeActivity.signalSource[4][k][j] = 0;
+                            //for(int srcidx=1; srcidx<ComputeActivity.SRCNUM; srcidx++) {  // *** get from checkbox max index
+                            for(int srcidx=1; srcidx<=maxChkNum; srcidx++) {
+                                for (int k = 0; k < 3; k++) {
+                                    for (int j = 0; j < length; j++) {
+                                        //Log.d(TAG, "i="+i+", j="+j);
+                                        if (ComputeActivity.signalSource[0][k][j] != 0) {
+                                            ComputeActivity.NsignalSource[srcidx][k][j] = ComputeActivity.signalSource[srcidx][k][j] / ComputeActivity.signalSource[0][k][j];
+                                        } else {
+                                            ComputeActivity.NsignalSource[srcidx][k][j] = 0;
+                                        }
+                                        //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
                                     }
-                                    //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
                                 }
                             }
                             Log.d(TAG, "Normalized ok");
                             Intent it = new Intent(MainActivity.this, ChartActivity.class);
                             it.putExtra("title", "Central Sample Spectrum");
                             it.putExtra("is_menu", true);
-                            it.putExtra("numChart", 2);
-                            it.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
-                            it.putExtra("signal name 1", " In Air ");
-                            it.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
-                            it.putExtra("signal name 2", " In Water ");
+                            it.putExtra("numChart", maxChkNum);
+                            for(int k=1; k<=maxChkNum; k++){
+                                Log.d(TAG, "putExtra: signal "+ k);
+                                it.putExtra("lightsource"+k, ComputeActivity.NsignalSource[k][spectrum_choice]);
+                                it.putExtra("signal name "+k, " In "+signalName[k-1]);
+                            }
+                            //it.putExtra("lightsource1", ComputeActivity.NsignalSource[1][spectrum_choice]);
+                            //it.putExtra("signal name 1", " In Air ");
+                            //it.putExtra("lightsource2", ComputeActivity.NsignalSource[2][spectrum_choice]);
+                            //it.putExtra("signal name 2", " In Water ");
                             Log.d(TAG, "start chart activity");
                             startActivity(it);
                         } else
@@ -293,140 +401,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 builder.show();
-
-                /*
-                boolean breaknote = false;
-                String notify_msg = "";
-
-                if(ComputeActivity.signalSource == null){
-                    Toast.makeText(MainActivity.this, "Lack all spectrum data, perform spectrum calculation first", Toast.LENGTH_SHORT).show();
-                    break;
-                }
-                if(ComputeActivity.signalSource[0][0] == null) {
-                    notify_msg += "light source, ";
-                    breaknote = true;
-                }
-                if(ComputeActivity.signalSource[1][0] == null) {
-                    notify_msg += "sample in air, ";
-                    breaknote = true;
-                }
-                if(ComputeActivity.signalSource[2][0] == null) {
-                    notify_msg += "sample in water, ";
-                    breaknote = true;
-                }
-
-                if(breaknote) {
-                    Toast.makeText(MainActivity.this, "Lack spectrum of " + notify_msg + "please perform calculation first", Toast.LENGTH_LONG).show();
-                    break;
-                }
-
-
-                AlertDialog.Builder builder3 = new AlertDialog.Builder(MainActivity.this);
-                DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        spectrum_choice = i;
-                        Log.d(TAG, "spectrum choice:" + spectrum_choice);
-                    }
-                };
-                builder3.setTitle(R.string.spectrum_object);
-                builder3.setSingleChoiceItems(R.array.sample_option, -1, onClickListener);
-                builder3.setPositiveButton("Normalized", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        Log.d(TAG, "Normalized");
-                        // initialized normalized spectrum array
-                        int length = ComputeActivity.signalSource[0][0].length;
-                        Log.d(TAG, "length =" + length);
-                        if(ComputeActivity.signalSource[3][0] == null) {
-                            for (int j = 0; j < 3; j++) {
-                                ComputeActivity.signalSource[3][j] = new double[length];
-                                ComputeActivity.signalSource[4][j] = new double[length];
-                                Log.d(TAG, "initialize source array[3,4]["+ j + "]");
-                            }
-                        }
-                        // compute normalized spectrum
-                        for(int j=0; j<length; j++){
-                            //Log.d(TAG, "i="+i+", j="+j);
-                            if(ComputeActivity.signalSource[0][spectrum_choice][j] !=0) {
-                                ComputeActivity.signalSource[3][spectrum_choice][j] = ComputeActivity.signalSource[1][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-                                ComputeActivity.signalSource[4][spectrum_choice][j] = ComputeActivity.signalSource[2][spectrum_choice][j] / ComputeActivity.signalSource[0][spectrum_choice][j];
-                            } else{
-                                ComputeActivity.signalSource[3][spectrum_choice][j] = 0;
-                                ComputeActivity.signalSource[4][spectrum_choice][j] = 0;
-                            }
-                            //Log.d(TAG, "source[3][0][" + j + "]=" + ComputeActivity.signalSource[3][0][j] + ", source[1][0][" + j + "]=" + ComputeActivity.signalSource[1][0][j]);
-                        }
-                        Log.d(TAG, "Normalized ok");
-                        Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
-
-                        switch(spectrum_choice){
-                            case 0: //Left sample
-                                //Log.d(TAG, "source[3][0][half]="+ComputeActivity.signalSource[3][0][length/2]+", source[1][0][half]="+ComputeActivity.signalSource[1][0][length/2]);
-                                it5.putExtra("title", "Left Sample Spectrum");
-                                break;
-                            case 1: //Central sample
-                                it5.putExtra("title", "Central Sample Spectrum");
-                                break;
-                            case 2: //Right sample
-                                it5.putExtra("title", "Right Sample Spectrum");
-                                break;
-                        }
-                        it5.putExtra("numChart", 2);
-                        it5.putExtra("lightsource1", ComputeActivity.signalSource[3][spectrum_choice]);
-                        it5.putExtra("signal name 1", " In Air ");
-                        it5.putExtra("lightsource2", ComputeActivity.signalSource[4][spectrum_choice]);
-                        it5.putExtra("signal name 2", " In Water ");
-                        Log.d(TAG, "start chart activity");
-                        startActivity(it5);
-                    }
-                });
-                builder3.setNegativeButton("Raw", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        Log.d(TAG, "Raw");
-                        switch(spectrum_choice){
-                            case 0: //Left sample
-                                Intent it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                it5.putExtra("title", "Left Sample Spectrum");
-                                it5.putExtra("numChart", 3);
-                                it5.putExtra("lightsource1", ComputeActivity.signalSource[0][0]);
-                                it5.putExtra("signal name 1", " White Light ");
-                                it5.putExtra("lightsource2", ComputeActivity.signalSource[1][0]);
-                                it5.putExtra("signal name 2", " In Air ");
-                                it5.putExtra("lightsource3", ComputeActivity.signalSource[2][0]);
-                                it5.putExtra("signal name 3", " In Water ");
-                                startActivity(it5);
-                                break;
-                            case 1: //Central sample
-                                it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                it5.putExtra("title", "Central Sample Spectrum");
-                                it5.putExtra("numChart", 3);
-                                it5.putExtra("lightsource1", ComputeActivity.signalSource[0][1]);
-                                it5.putExtra("signal name 1", " White Light ");
-                                it5.putExtra("lightsource2", ComputeActivity.signalSource[1][1]);
-                                it5.putExtra("signal name 2", " In Air ");
-                                it5.putExtra("lightsource3", ComputeActivity.signalSource[2][1]);
-                                it5.putExtra("signal name 3", " In Water ");
-                                startActivity(it5);
-                                break;
-                            case 2: //Right sample
-                                it5 = new Intent(MainActivity.this, ChartActivity.class);
-                                it5.putExtra("title", "Right Sample Spectrum");
-                                it5.putExtra("numChart", 3);
-                                it5.putExtra("lightsource1", ComputeActivity.signalSource[0][2]);
-                                it5.putExtra("signal name 1", " White Light ");
-                                it5.putExtra("lightsource2", ComputeActivity.signalSource[1][2]);
-                                it5.putExtra("signal name 2", " In Air ");
-                                it5.putExtra("lightsource3", ComputeActivity.signalSource[2][2]);
-                                it5.putExtra("signal name 3", " In Water ");
-                                startActivity(it5);
-                                break;
-                        }
-                    }
-                });
-                builder3.show();
-                */
                 break;
             case R.id.delay_shot:
                 builder = new AlertDialog.Builder(MainActivity.this);
@@ -480,16 +454,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 builder.show();
-
-                /*
-                Calendar cal = Calendar.getInstance();
-                // 設定於 ??? 後執行
-                cal.add(Calendar.MINUTE, 1);
-                Intent intent = new Intent(MainActivity.this, ShotReceiver.class);
-                PendingIntent pi = PendingIntent.getBroadcast(MainActivity.this, 1, intent, PendingIntent.FLAG_ONE_SHOT);
-                AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
-                */
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -515,6 +479,7 @@ public class MainActivity extends AppCompatActivity {
                 case 0: // calibrate
                     it = new Intent(MainActivity.this, CalActivity.class);
                     break;
+                /*
                 case 1: //whitelight
                     it = new Intent(MainActivity.this, ComputeActivity.class);
                     it.putExtra("class", 0); //0: White light
@@ -526,6 +491,15 @@ public class MainActivity extends AppCompatActivity {
                 case 3: //Water
                     it = new Intent(MainActivity.this, ComputeActivity.class);
                     it.putExtra("class", 2);
+                    break;
+                    */
+                default:
+                    it = new Intent(MainActivity.this, ComputeActivity.class);
+                    it.putExtra("class", requestCode-1);
+                    if(requestCode <=2)
+                        it.putExtra("Red", false);
+                    else
+                        it.putExtra("Red", true);
                     break;
             }
             it.putExtra("filename", filename);

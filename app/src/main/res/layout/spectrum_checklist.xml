@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent" android:id="@+id/spectrum_layout">
 
     <CheckBox
         android:id="@+id/chkCal"
@@ -26,5 +26,29 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="20sp"
-        android:text="溶液中樣品" />
+        android:text="水中樣品" />
+    <CheckBox
+        android:id="@+id/chkWater1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="溶液中樣品1" />
+    <CheckBox
+        android:id="@+id/chkWater2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="溶液中樣品2" />
+    <CheckBox
+        android:id="@+id/chkWater3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="溶液中樣品3" />
+    <CheckBox
+        android:id="@+id/chkWater4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="溶液中樣品4" />
 </LinearLayout>

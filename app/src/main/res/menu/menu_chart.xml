@@ -14,4 +14,8 @@
         android:title="樣本-右"
         app:showAsAction="never"
         />
+    <item android:id="@+id/peakAnalysis"
+        android:title="峰值分析"
+        app:showAsAction="never"
+        />
 </menu>

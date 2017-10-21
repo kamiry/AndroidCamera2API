@@ -29,6 +29,7 @@ import java.io.InputStream;
 
 public class ComputeActivity extends AppCompatActivity {
 
+    public static final int SRCNUM = 7; // max. number of input source
     private static final String TAG = "AndroidCamera2API";
     protected static final int PROGRESS = 0x10000, PROGRESS2 = 0x10001, PROGRESS3 = 0x10002, PROGRESS4 = 0x10003;
     private ImageView iv;
@@ -36,16 +37,17 @@ public class ComputeActivity extends AppCompatActivity {
     // public stored 1-D spectrum
     public static double[] lightsourceH;//, lightsourceV1, lightsourceV2, lightsourceV3;
     public static double[][][] signalSource; // class: White, Air, Water, 3 parts: Left, Center, Right, 1-D pos
-
+    public static double[][][] NsignalSource; // normalized signal source
     int sourceIdx = 0;
     //
     int peakPos = 0, peakPosL, peakPosR, w, i1=0, i2=0;
     // store the segmented region index
-    public static int x1_l, x1_r, x2_l, x2_r, x3_l, x3_r;
+    //public static int x1_l, x1_r, x2_l, x2_r, x3_l, x3_r;
     public static int [][] bound = new int[3][2];
     //
     private ProgressBar pbar;
-    private String[] classname = {"Light", "Air", "Water"};
+    private String[] classname = {"Light", "Air", "Water", "Fluid1", "Fluid2", "Fluid2", "Fluid3", "Fluid4"};
+    boolean Red_only = false;
 
     // option menu
     @Override
@@ -61,7 +63,7 @@ public class ComputeActivity extends AppCompatActivity {
             case R.id.spectrum_option:
                 Intent it = new Intent(ComputeActivity.this, ChartActivity.class);
                 Log.d(TAG, "option spectrum");
-                it.putExtra("title", classname[sourceIdx]+"Source Raw Spectrum");
+                it.putExtra("title", classname[sourceIdx]+" Source Raw Spectrum");
                 it.putExtra("numChart", 3);
                 it.putExtra("lightsource1", signalSource[sourceIdx][1]);
                 it.putExtra("signal name 1", " Center ");
@@ -85,9 +87,11 @@ public class ComputeActivity extends AppCompatActivity {
         if(signalSource == null){
             Log.d("TAG", "initialize 3-D signal source");
             //Toast.makeText(ComputeActivity.this, "initialize 3-D signal source", Toast.LENGTH_SHORT).show();
-            signalSource = new double[5][][];
-            for(int i=0; i<5; i++){
-                signalSource[i] = new double[3][];
+            signalSource = new double[SRCNUM][][];
+            NsignalSource = new double[SRCNUM][][];
+            for(int i=0; i<SRCNUM; i++){
+                signalSource[i] = new double[3][];  //left, center, right
+                NsignalSource[i] = new double[3][];  //left, center, right
             }
         }
         //
@@ -96,6 +100,7 @@ public class ComputeActivity extends AppCompatActivity {
         Log.d(TAG, "Compute, filename =" + fname);
         sourceIdx = it.getIntExtra("class", 0); //important, which water source id
         Log.d(TAG, "class =" + sourceIdx);
+        Red_only = it.getBooleanExtra("Red", false);
         //
         //fname = "WhiteISO500Exp10_1507187344233.jpg";
         //fname = "WaterISO3000Exp100_1507187197782.jpg";
@@ -104,6 +109,7 @@ public class ComputeActivity extends AppCompatActivity {
         File f = new File(fname);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inMutable = true;
         try {
             bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
         } catch (FileNotFoundException e) {
@@ -159,6 +165,7 @@ public class ComputeActivity extends AppCompatActivity {
         for(int y=0; y<bitmap.getHeight(); y++){
             for(int i=0; i<3; i++){
                 for(int j=0; j<2; j++){
+                    //Log.d(TAG, "bound["+ i + "][ " + j + "]= " + bound[i][j] + ", y=" + y + ", pixel=" + bitmap.getPixel(bound[i][j]-1, y));
                     bitmap.setPixel(bound[i][j]-1, y, colorMargin[i]);
                     bitmap.setPixel(bound[i][j], y, colorMargin[i]);
                     bitmap.setPixel(bound[i][j]+1, y, colorMargin[i]);
@@ -228,7 +235,9 @@ public class ComputeActivity extends AppCompatActivity {
         if(signalSource[sourceIdx][0] == null) {
             for (int i = 0; i < 3; i++) {
                 signalSource[sourceIdx][i] = new double[height];
+                NsignalSource[sourceIdx][i] = new double[height];
                 Log.d(TAG, "initialize source array[" + sourceIdx +"]["+ i + "]");
+                Log.d(TAG, "NsignalSource= " + NsignalSource[sourceIdx][0][0]);
             }
         }
         Log.d(TAG, "segmented?" + MainActivity.segmented);
@@ -331,7 +340,10 @@ public class ComputeActivity extends AppCompatActivity {
                 for (int x = bound[i][0]; x <= bound[i][1]; x++) {
                     int c = bitmap.getPixel(x, y);
                     double value = Color.red(c) + Color.green(c) + Color.blue(c);
-                    accValue += value;
+                    if(Red_only)
+                        accValue += (double) Color.red(c);
+                    else
+                        accValue += value;
                 }
                 signalSource[sourceIdx][i][y] = accValue;
 
