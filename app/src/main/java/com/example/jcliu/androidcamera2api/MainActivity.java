@@ -381,9 +381,29 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                             Log.d(TAG, "Normalized ok");
+                            // 20171203
+                            // smoothing the result
+                            double [] tempSignal  = new double[length];
+
+                            for(int srcidx=1; srcidx<=maxChkNum; srcidx++) {
+                                for (int k = 0; k < 3; k++) {
+
+                                    for (int j = 3; j < length-3; j++) {
+                                        //Log.d(TAG, "i="+i+", j="+j);
+                                        tempSignal[j] =  0.1752*ComputeActivity.NsignalSource[srcidx][k][j] +
+                                                0.1063*ComputeActivity.NsignalSource[srcidx][k][j-3] + 0.1403*ComputeActivity.NsignalSource[srcidx][k][j-2] + 0.1658*ComputeActivity.NsignalSource[srcidx][k][j-1] +
+                                                0.1063*ComputeActivity.NsignalSource[srcidx][k][j+3] + 0.1403*ComputeActivity.NsignalSource[srcidx][k][j+2] + 0.1658*ComputeActivity.NsignalSource[srcidx][k][j+1];
+                                    }
+                                    for (int j = 3; j < length-3; j++) {
+                                        ComputeActivity.NsignalSource[srcidx][k][j] =  tempSignal[j];
+                                    }
+                                }
+                            }
+                            //
                             Intent it = new Intent(MainActivity.this, ChartActivity.class);
                             it.putExtra("title", "Central Sample Spectrum");
                             it.putExtra("is_menu", true);
+                            it.putExtra("do_norm", true);
                             it.putExtra("numChart", maxChkNum);
                             for(int k=1; k<=maxChkNum; k++){
                                 Log.d(TAG, "putExtra: signal "+ k);

@@ -12,7 +12,10 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import org.achartengine.ChartFactory;
+import org.achartengine.chart.CombinedXYChart;
+import org.achartengine.chart.LineChart;
 import org.achartengine.chart.PointStyle;
+import org.achartengine.chart.ScatterChart;
 import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
@@ -28,11 +31,12 @@ public class ChartActivity extends AppCompatActivity {
     int [] defColor ={Color.RED, Color.GREEN, Color.BLUE, Color.BLACK, Color.CYAN, Color.MAGENTA, Color.YELLOW};
     static int leftIdx=0, rightIdx=0;
     boolean is_menu;
+    boolean do_norm;
     final double [] RIU={1.3325, 1.3453, 1.3523, 1.3639};
     static double [][] peakNM = new double[4][3];
     double [][] peakValue = new double[4][3];
     LinearLayout chartContainer;
-    String [] AnalysisSignalName = {"Left", "Center", "Right"};
+    String [] AnalysisSignalName = {"  Left", "  Center", "  Right"};
     private static boolean analysisMenu = false;
 
     // option menu
@@ -104,6 +108,7 @@ public class ChartActivity extends AppCompatActivity {
             Log.d(TAG, "Normalized");
             it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             it.putExtra("is_menu", true);
+            it.putExtra("do_norm", true);
             it.putExtra("numChart", numChart);
             for (int k = 1; k <= numChart; k++) {
                 Log.d(TAG, "putExtra: signal " + k);
@@ -120,7 +125,9 @@ public class ChartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Intent it = getIntent();
         is_menu = it.getBooleanExtra("is_menu", false);
+        do_norm = it.getBooleanExtra("do_norm", false); //normalized the peak to 1
         Log.d(TAG, "ChartActivity: is_menu="+is_menu);
+        Log.d(TAG, "ChartActivity: do_norm="+do_norm);
         //if(!is_menu)
         //    this.invalidateOptionsMenu();
 
@@ -169,6 +176,19 @@ public class ChartActivity extends AppCompatActivity {
                 }
             }
         }
+        // normalized spectrum peak to 1
+        if(do_norm){
+            for(int i=0; i<numChart; i++) {
+                double curMax = 0.0;
+                for (int j = leftIdx; j < rightIdx; j++) {
+                    if (spectrum[i][j] > curMax) curMax = spectrum[i][j];
+                }
+                for (int j = leftIdx; j < rightIdx; j++) {
+                    spectrum[i][j] = spectrum[i][j]/curMax;
+                }
+            }
+        }
+
         XYMultipleSeriesRenderer multiRenderer = new XYMultipleSeriesRenderer();
         //multiRenderer.setXLabels(0);
         multiRenderer.setChartTitle(title);
@@ -260,8 +280,35 @@ public class ChartActivity extends AppCompatActivity {
         // Creating a dataset to hold each series
         XYMultipleSeriesDataset dataset = new XYMultipleSeriesDataset();
 
-        XYSeries [] LSeries = new XYSeries[3];
-        XYSeriesRenderer [] LSeriesRenderer = new XYSeriesRenderer[3];
+        XYSeries [] LSeries = new XYSeries[6];
+        XYSeriesRenderer [] LSeriesRenderer = new XYSeriesRenderer[6];
+
+        // calculate approximating linear function - MSE to y=ax+b
+        double[] X1 = new double[3];
+        double[] X2 = new double[3];
+        double[] Y1 = new double[3];
+        double[] Y2 = new double[3];
+        double[] Z1 = new double[3];
+        double[] Z2 = new double[3];
+        double[] A = new double[3];
+        double[] B = new double[3];
+        for(int i=0; i<3; i++){
+            X1[i] = 0.0; Y1[i] = 4.0; Z1[i] = 0.0;
+            X2[i] = 0.0; Y2[i] = 0.0; Z2[i] = 0.0;
+            for(int j=0; j< numChart-1; j++){
+                X1[i] += RIU[j];
+                Z1[i] += peakNM[j][i];
+                X2[i] += RIU[j]*RIU[j];
+                Y2[i] += RIU[j];
+                Z2[i] += RIU[j]*peakNM[j][i];
+            }
+            A[i] = (Z1[i]*Y2[i]-Z2[i]*Y1[i])/(X1[i]*Y2[i]-X2[i]*Y1[i]);
+            B[i] = (Z1[i]*X2[i]-Z2[i]*X1[i])/(X2[i]*Y1[i]-X1[i]*Y2[i]);
+            Log.d(TAG, "A["+i+"]="+A[i]+", B["+i+"]="+B[i]);
+        }
+
+        // add original scatter points
+        PointStyle[] pStyle =  {PointStyle.CIRCLE, PointStyle.SQUARE, PointStyle.DIAMOND};
 
         for(int i=0; i<3; i++) {
             LSeries[i] = new XYSeries(AnalysisSignalName[i]);
@@ -276,14 +323,44 @@ public class ChartActivity extends AppCompatActivity {
 
             // 線的描述
             LSeriesRenderer[i] = new XYSeriesRenderer();
-            LSeriesRenderer[i].setLineWidth(2);
+            LSeriesRenderer[i].setLineWidth(0.0f);
             LSeriesRenderer[i].setColor(defColor[i]);
-            LSeriesRenderer[i].setPointStyle(PointStyle.CIRCLE);
+            LSeriesRenderer[i].setPointStyle(pStyle[i]);
+            LSeriesRenderer[i].setFillPoints(true);
+            //LSeriesRenderer[i].setPointStrokeWidth((float)10.0);
+
 
             multiRenderer.addSeriesRenderer(LSeriesRenderer[i]);
         }
-        View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
+        // add approximate lines
+        for(int i=0; i<3; i++) {
+            LSeries[i+3] = new XYSeries(AnalysisSignalName[i]);
+            for (int j = 0; j < numChart-1; j++) {
+                LSeries[i+3].add(RIU[j], A[i]*RIU[j]+B[i]);
+            }
 
+            Log.d(TAG, "analysisDraw App lines add ok");
+
+            // Adding Income Series to the dataseti
+            dataset.addSeries(LSeries[i+3]);
+
+            // 線的描述
+            LSeriesRenderer[i+3] = new XYSeriesRenderer();
+            LSeriesRenderer[i+3].setLineWidth(2);
+            LSeriesRenderer[i+3].setColor(defColor[i]);
+            //LSeriesRenderer[i].setPointStyle(PointStyle.CIRCLE);
+
+            multiRenderer.addSeriesRenderer(LSeriesRenderer[i+3]);
+        }
+        //
+        CombinedXYChart.XYCombinedChartDef[] types = new CombinedXYChart.XYCombinedChartDef[] {
+                new CombinedXYChart.XYCombinedChartDef(ScatterChart.TYPE, 0, 1, 2), new CombinedXYChart.XYCombinedChartDef(LineChart.TYPE, 3, 4, 5)
+        };
+        //
+        multiRenderer.setPointSize(10.0f);
+        View mChart = ChartFactory.getCombinedXYChartView(this, dataset, multiRenderer, types);
+        //View mChart = ChartFactory.getLineChartView(this, dataset, multiRenderer);
+        //View mChart = ChartFactory.getScatterChartView(this, dataset, multiRenderer);
         return mChart;
     }
 
